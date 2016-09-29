@@ -4,16 +4,23 @@
 # GLOBALS                                                                       #
 #################################################################################
 
-BUCKET = [OPTIONAL] your-bucket-for-syncing-data (do not include 's3://')
+BUCKET = drivendata-farmdrive
 
 #################################################################################
 # COMMANDS                                                                      #
 #################################################################################
 
-requirements:
-	pip install -q -r requirements.txt
+new_env:
+	conda env create -f environment.yml
 
-data: requirements
+update_env:
+	conda env update environment.yml
+
+create_db:
+	createdb farmdrive;
+	psql -f src/data/create_postgis_db.sql farmdrive
+
+data:
 	python src/data/make_dataset.py
 
 clean:
