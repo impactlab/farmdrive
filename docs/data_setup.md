@@ -5,7 +5,7 @@
     make sync_data_from_s3
 
 # Create Postgres database
- - OSX [`Postgres.app`](http://postgresapp.com/
+ - OSX [`Postgres.app`](http://postgresapp.com/)
  - Ubuntu: `apt-get`
 
 From commandline run:
