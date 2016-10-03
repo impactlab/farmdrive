@@ -9,7 +9,7 @@ import xml.etree.ElementTree as ET
 import os
 import re
 
-import pyodb
+from . import pyodb
 
 def avl2qml(data, shapefile=None, field_name=None):
     # parse avl
@@ -70,15 +70,21 @@ def avl2qml(data, shapefile=None, field_name=None):
 
                 rng = ET.SubElement(ranges, 'range')
                 rng.attrib['symbol'] = str(n)
+
                 # HACK: QGIS doesn't match '1.0' to '1'
-                if lclass.attrs['MinNum'] == int(lclass.attrs['MinNum']):
-                    rng.attrib['lower'] = str(int(lclass.attrs['MinNum']))
-                else:
-                    rng.attrib['lower'] = str(lclass.attrs['MinNum'])
-                if lclass.attrs['MaxNum'] == int(lclass.attrs['MaxNum']):
-                    rng.attrib['upper'] = str(int(lclass.attrs['MaxNum']))
-                else:
-                    rng.attrib['upper'] = str(lclass.attrs['MaxNum'])
+
+                if 'MinNum' in lclass.attrs:
+                    if lclass.attrs['MinNum'] == int(lclass.attrs['MinNum']):
+                        rng.attrib['lower'] = str(int(lclass.attrs['MinNum']))
+                    else:
+                        rng.attrib['lower'] = str(lclass.attrs['MinNum'])
+
+                if 'MaxNum' in lclass.attrs:
+                    if lclass.attrs['MaxNum'] == int(lclass.attrs['MaxNum']):
+                        rng.attrib['upper'] = str(int(lclass.attrs['MaxNum']))
+                    else:
+                        rng.attrib['upper'] = str(lclass.attrs['MaxNum'])
+
                 if lclass.label is not None:
                     rng.attrib['label'] = lclass.label
                 else:
@@ -264,7 +270,7 @@ def avl2qml(data, shapefile=None, field_name=None):
     indent(qgis)
 
     qml = '''<!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>\n''' + ET.tostring(qgis).decode('utf-8')
-    
+
     return qml
 
 def indent(elem, level=0):

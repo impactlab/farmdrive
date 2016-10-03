@@ -3,5 +3,5 @@
 
 __all__ = ['pyodb', 'avl2qml']
 
-import pyodb
-import avl2qml
+from . import pyodb
+from . import avl2qml
