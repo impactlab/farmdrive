@@ -9,6 +9,8 @@ from dotenv import find_dotenv, load_dotenv
 from osgeo import ogr, osr
 from tqdm import tqdm
 
+from external.avl2qml import avl2qml
+
 
 PROJECT_ROOT = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir)
 
@@ -32,6 +34,8 @@ def main():
     tif_pattern = str(os.path.join(PROJECT_ROOT, 'data', 'raw', '**', '*.tif'))
     tif_cmd = ['raster2pgsql', '-s', '4326', '-I', '-l', '2,4,10']
     load_geo_info(tif_pattern, tif_cmd)
+
+    convert_avl_to_qml()
 
 
 def load_geo_info(pattern, sql_generating_cmd):
@@ -58,6 +62,28 @@ def load_geo_info(pattern, sql_generating_cmd):
 
             run(['psql', '-d', 'farmdrive', '-f', psql_path, '--quiet'], check=True)
             os.remove(psql_path)
+
+
+def convert_avl_to_qml():
+    """ Converts ArcGIS legend files to styles for QGIS. This is helpful
+        to do if you're looking at the data in QGIS.
+    """
+    logger = logging.getLogger(__name__)
+    logger.info('Converting AVL files into QGIS files')
+
+    avl_pattern = str(os.path.join(PROJECT_ROOT, 'data', 'raw', '**', '*.avl'))
+    for globbed_file in glob(avl_pattern, recursive=True):
+        logger.info("Reading '{}'".format(globbed_file))
+
+        with open(globbed_file, 'r') as f:
+            data = f.read()
+
+        qml = avl2qml.avl2qml(data)
+        qml_path = os.path.splitext(globbed_file)[0] + '.qml'
+
+        logger.info("Writing '{}'".format(qml_path))
+        with open(qml_path, 'w') as qml_file:
+            qml_file.write(qml)
 
 
 if __name__ == '__main__':
