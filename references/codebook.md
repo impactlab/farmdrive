@@ -1,16 +1,24 @@
 # Raw files/directories covered in this codebook
-  - [link](link): details
+  - [`raw/Crop Prices`](#rawcrop-prices)
+  - [`processed/all_crop_prices.csv`](#processedall_crop_pricescsv)
+  - [`raw/Elevation Data`](#rawelevation-data)
+  - [`raw/FAO-AGROECOLOGICAL DATA`](#rawfao-agroecological-data)
+  - [`raw/Rainfall Data`](#rawrainfall-data)
+  - [`raw/Soil Data/SOTWIS_Kenya_ver1.0`](#rawsoil-datasotwis_kenya_ver10)
+  - [`raw/User Data`](#rawuser-data)
+  - [`raw/User Data/ward_leve_data.rds`](#rawuser-dataward_leve_datards)
+  - [`raw/Ward Shapefiles`](#rawward-shapefiles)
 
 
 ## `raw/Crop Prices`
 
-Summary | 
+Summary | -  
  --- | ---
 type | Excel files
 time | Daily 2010-2015; Monthly 2015
-geography | Nbi, Msa, ksm, Nku, Thika, Kisii C
+geography | See below
 
-This isn't really crop yield data, it's market prices for various commodities (e.g., Maize, Wheat, Cabbages, etc.). Prices have a geographic region in Kenya associated with them. There may be a way to estimate yield based on price (depending on relationship of supply/demand).
+This is market prices for various commodities (e.g., Maize, Wheat, Cabbages, etc.). Prices have a geographic region in Kenya associated with them. There may be a way to estimate yield based on price (depending on relationship of supply/demand).
 
 Data appears to come from the Kenyan [National Farmers Information Service](http://www.nafis.go.ke/category/market-info/). Potentially, we could scrape additional date ranges from this site. However, it appears that the Excel files are not available for download--only JPG screenshots of them. Googling for additional xlsx files turns up some links that might be relevant, but as of right now requests are timing out. For example, [www.nafis.go.ke/wp-content/uploads/2012/07/1272012.xls](www.nafis.go.ke/wp-content/uploads/2012/07/1272012.xls) and [http://www.kilimo.go.ke/kilimo_docs/market_prices/](http://www.kilimo.go.ke/kilimo_docs/market_prices/). Potentially could email contact address: MINISTRY OF AGRICULTURE, Market Research and Information, E-mail: marketinfo@kilimo.go.ke or info_amdi@yahoo.com
 
@@ -20,58 +28,58 @@ This raw data is cleaned and aligned into a single csv file: `data/processed/all
 
 This processed file has the following columns:
 
- - [Bungoma](Bungoma)
- - [Busia](Busia)
- - [Chwele](Chwele)
- - [Class](Class)
- - [Code](Code)
- - [Commodity](Commodity)
- - [Eldoret](Eldoret)
- - [Embu](Embu)
- - [Gakorn](Gakorn)
- - [Garissa](Garissa)
- - [Gem](Gem)
- - [Imenti](Imenti)
- - [Imenti North](Imenti North)
- - [Imenti South](Imenti South)
- - [Isiolo](Isiolo)
- - [Kajiado](Kajiado)
- - [Kakamega](Kakamega)
- - [Kapsowar](Kapsowar)
- - [Karatina](Karatina)
- - [Kg](Kg)
- - [Kibwezi](Kibwezi)
- - [Kisii](Kisii)
- - [Kisumu](Kisumu)
- - [Kitale](Kitale)
- - [Kitui](Kitui)
- - [Loitokitok](Loitokitok)
- - [Machakos](Machakos)
- - [Malindi](Malindi)
- - [Mande](Mande)
- - [Marakwet](Marakwet)
- - [Marimanti](Marimanti)
- - [Mathira](Mathira)
- - [Maua](Maua)
- - [Mdra](Mdra)
- - [Meru](Meru)
- - [Mombasa](Mombasa)
- - [Mwala](Mwala)
- - [Mwingi](Mwingi)
- - [Nairobi](Nairobi)
- - [Nakuru](Nakuru)
- - [Nkubu](Nkubu)
- - [Nyahururu](Nyahururu)
- - [Siaya](Siaya)
- - [Tavata](Tavata)
- - [Tharaka North](Tharaka North)
- - [Tharaka South](Tharaka South)
- - [Thika](Thika)
- - [Unit](Unit)
- - [VARIETY](VARIETY)
- - [Wajir](Wajir)
- - [Yala](Yala)
- - [date](date)
+ - [Bungoma](#Bungoma)
+ - [Busia](#Busia)
+ - [Chwele](#Chwele)
+ - [Class](#Class)
+ - [Code](#Code)
+ - [Commodity](#Commodity)
+ - [Eldoret](#Eldoret)
+ - [Embu](#Embu)
+ - [Gakorn](#Gakorn)
+ - [Garissa](#Garissa)
+ - [Gem](#Gem)
+ - [Imenti](#Imenti)
+ - [Imenti North](#Imenti North)
+ - [Imenti South](#Imenti South)
+ - [Isiolo](#Isiolo)
+ - [Kajiado](#Kajiado)
+ - [Kakamega](#Kakamega)
+ - [Kapsowar](#Kapsowar)
+ - [Karatina](#Karatina)
+ - [Kg](#Kg)
+ - [Kibwezi](#Kibwezi)
+ - [Kisii](#Kisii)
+ - [Kisumu](#Kisumu)
+ - [Kitale](#Kitale)
+ - [Kitui](#Kitui)
+ - [Loitokitok](#Loitokitok)
+ - [Machakos](#Machakos)
+ - [Malindi](#Malindi)
+ - [Mande](#Mande)
+ - [Marakwet](#Marakwet)
+ - [Marimanti](#Marimanti)
+ - [Mathira](#Mathira)
+ - [Maua](#Maua)
+ - [Mdra](#Mdra)
+ - [Meru](#Meru)
+ - [Mombasa](#Mombasa)
+ - [Mwala](#Mwala)
+ - [Mwingi](#Mwingi)
+ - [Nairobi](#Nairobi)
+ - [Nakuru](#Nakuru)
+ - [Nkubu](#Nkubu)
+ - [Nyahururu](#Nyahururu)
+ - [Siaya](#Siaya)
+ - [Tavata](#Tavata)
+ - [Tharaka North](#Tharaka North)
+ - [Tharaka South](#Tharaka South)
+ - [Thika](#Thika)
+ - [Unit](#Unit)
+ - [VARIETY](#VARIETY)
+ - [Wajir](#Wajir)
+ - [Yala](#Yala)
+ - [date](#date)
 
 #### `Bungoma`
 
@@ -1137,7 +1145,7 @@ Name: date, dtype: object
 
 ## `raw/Elevation Data`
 
- Summary | 
+Summary | -  
  --- | ---
 type | TIF (raster)
 time | N/A
@@ -1160,7 +1168,7 @@ Shapefiles for Agro-ecological zones in Kenya and Africa.
 
 ### `raw/FAO-AGROECOLOGICAL DATA/AEZ16_CLAS--SSA.tif`
 
- Summary | 
+Summary | -  
  --- | ---
 type | TIF
 time | N/A
@@ -1170,7 +1178,7 @@ Raster of 16 levels of agro-ecological zones in Africa.
 
 ### `raw/FAO-AGROECOLOGICAL DATA/aez8_clas--ssa.tif_5`
 
- Summary | 
+Summary | -  
  --- | ---
 type | TIF
 time | N/A
@@ -1180,7 +1188,7 @@ Raster of 8 levels of agro-ecological zones in Africa.
 
 ### `raw/FAO-AGROECOLOGICAL DATA/Kenya_aezones`
 
- Summary | 
+Summary | -  
  --- | ---
 type | Shapefile
 time | N/A
@@ -1204,7 +1212,7 @@ From Kenya_Aez.doc:
 
 ## `raw/Rainfall Data`
 
- Summary | 
+Summary | -  
  --- | ---
 type | TIF
 time | 2012-2015, yearly
@@ -1218,7 +1226,7 @@ Files are named `trmm_acc_YYYY.tif`
 
 ## `raw/Soil Data/SOTWIS_Kenya_ver1.0`
 
- Summary | 
+Summary | -  
  --- | ---
 type | Shapefiles
 time | N/A
@@ -1255,7 +1263,7 @@ Data from FarmDrive about their farmers.
 
 ### `raw/User Data/tbl_farmer.csv`
 
- Summary | 
+Summary | -  
  --- | ---
 type | CSV
 time | N/A
@@ -1263,21 +1271,21 @@ geography | N/A
 
 Raw database table dump for farmers in the FarmDrive system.
 
- - [date_created](date_created)
- - [phone_number](phone_number)
- - [farmer_name](farmer_name)
- - [id_number](id_number)
- - [county](county)
- - [constituency](constituency)
- - [ward](ward)
- - [tocode](tocode)
- - [language_preference](language_preference)
- - [dob](dob)
- - [gender](gender)
- - [marital_status](marital_status)
- - [dependants_number](dependants_number)
- - [sub_location](sub_location)
- - [wards_coded](wards_coded)
+ - [date_created](#date_created)
+ - [phone_number](#phone_number)
+ - [farmer_name](#farmer_name)
+ - [id_number](#id_number)
+ - [county](#county)
+ - [constituency](#constituency)
+ - [ward](#ward)
+ - [tocode](#tocode)
+ - [language_preference](#language_preference)
+ - [dob](#dob)
+ - [gender](#gender)
+ - [marital_status](#marital_status)
+ - [dependants_number](#dependants_number)
+ - [sub_location](#sub_location)
+ - [wards_coded](#wards_coded)
 
 #### `date_created`
 
@@ -1589,7 +1597,7 @@ Head of the file:
 
 ## `raw/Ward Shapefiles`
 
-Summary | 
+Summary | -  
 --- | ---
 type | Shapefiles
 time | N/A
