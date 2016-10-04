@@ -2,7 +2,7 @@
   - [link](link): details
 
 
-## `raw/Crop Yield`
+## `raw/Crop Prices`
 
 Summary | 
  --- | ---
@@ -14,6 +14,1126 @@ This isn't really crop yield data, it's market prices for various commodities (e
 
 Data appears to come from the Kenyan [National Farmers Information Service](http://www.nafis.go.ke/category/market-info/). Potentially, we could scrape additional date ranges from this site. However, it appears that the Excel files are not available for download--only JPG screenshots of them. Googling for additional xlsx files turns up some links that might be relevant, but as of right now requests are timing out. For example, [www.nafis.go.ke/wp-content/uploads/2012/07/1272012.xls](www.nafis.go.ke/wp-content/uploads/2012/07/1272012.xls) and [http://www.kilimo.go.ke/kilimo_docs/market_prices/](http://www.kilimo.go.ke/kilimo_docs/market_prices/). Potentially could email contact address: MINISTRY OF AGRICULTURE, Market Research and Information, E-mail: marketinfo@kilimo.go.ke or info_amdi@yahoo.com
 
+This raw data is cleaned and aligned into a single csv file: `data/processed/all_crop_prices.csv`
+
+## `processed/all_crop_prices.csv`
+
+This processed file has the following columns:
+
+ - [Bungoma](Bungoma)
+ - [Busia](Busia)
+ - [Chwele](Chwele)
+ - [Class](Class)
+ - [Code](Code)
+ - [Commodity](Commodity)
+ - [Eldoret](Eldoret)
+ - [Embu](Embu)
+ - [Gakorn](Gakorn)
+ - [Garissa](Garissa)
+ - [Gem](Gem)
+ - [Imenti](Imenti)
+ - [Imenti North](Imenti North)
+ - [Imenti South](Imenti South)
+ - [Isiolo](Isiolo)
+ - [Kajiado](Kajiado)
+ - [Kakamega](Kakamega)
+ - [Kapsowar](Kapsowar)
+ - [Karatina](Karatina)
+ - [Kg](Kg)
+ - [Kibwezi](Kibwezi)
+ - [Kisii](Kisii)
+ - [Kisumu](Kisumu)
+ - [Kitale](Kitale)
+ - [Kitui](Kitui)
+ - [Loitokitok](Loitokitok)
+ - [Machakos](Machakos)
+ - [Malindi](Malindi)
+ - [Mande](Mande)
+ - [Marakwet](Marakwet)
+ - [Marimanti](Marimanti)
+ - [Mathira](Mathira)
+ - [Maua](Maua)
+ - [Mdra](Mdra)
+ - [Meru](Meru)
+ - [Mombasa](Mombasa)
+ - [Mwala](Mwala)
+ - [Mwingi](Mwingi)
+ - [Nairobi](Nairobi)
+ - [Nakuru](Nakuru)
+ - [Nkubu](Nkubu)
+ - [Nyahururu](Nyahururu)
+ - [Siaya](Siaya)
+ - [Tavata](Tavata)
+ - [Tharaka North](Tharaka North)
+ - [Tharaka South](Tharaka South)
+ - [Thika](Thika)
+ - [Unit](Unit)
+ - [VARIETY](VARIETY)
+ - [Wajir](Wajir)
+ - [Yala](Yala)
+ - [date](date)
+
+#### `Bungoma`
+
+Contains
+
+First 5 non-null values:
+
+```
+0   1400.00
+1   1000.00
+2   4000.00
+3   2000.00
+6   3400.00
+Name: Bungoma, dtype: object
+```
+
+
+#### `Busia`
+
+Contains
+
+First 5 non-null values:
+
+```
+0     2430.0
+2     4950.0
+3     2700.0
+10    7200.0
+11    6300.0
+Name: Busia, dtype: object
+```
+
+
+
+#### `Chwele`
+
+Contains
+
+First 5 non-null values:
+
+```
+0   3200.00
+2   5200.00
+3   4000.00
+6   6000.00
+7   5400.00
+Name: Chwele, dtype: object
+```
+
+
+
+#### `Class`
+
+Contains
+
+Unique values in the column:
+
+```
+HORTICULTURE                                303
+CEREAL                                      303
+                                            303
+OTHERS                                      303
+LEGUMES                                     303
+ROOTS & TUBERS                              303
+* means the  Commodity is not available.      6
+* = Commodity, not available.                 1
+Name: Class, dtype: int64
+```
+
+
+
+#### `Code`
+
+Contains
+
+First 5 non-null values:
+
+```
+0   20.00
+1   19.00
+2   41.00
+3   42.00
+4   48.00
+Name: Code, dtype: float64
+```
+
+
+
+#### `Commodity`
+
+Contains
+
+First 5 non-null values:
+
+```
+0        Dry Maize
+1      Green Maize
+2    Finger Millet
+3          Sorghum
+4            Wheat
+Name: Commodity, dtype: object
+```
+
+
+
+#### `Eldoret`
+
+Contains
+
+First 5 non-null values:
+
+```
+0    3000.0
+1    1620.0
+2    6750.0
+3    4500.0
+4    3300.0
+Name: Eldoret, dtype: object
+```
+
+
+
+#### `Embu`
+
+Contains
+
+First 5 non-null values:
+
+```
+0    3000.0
+1    2600.0
+2    6000.0
+3    4000.0
+5    6500.0
+Name: Embu, dtype: object
+```
+
+
+
+#### `Gakorn`
+
+Contains
+
+First 5 non-null values:
+
+```
+0   2000.00
+1   2200.00
+2   6500.00
+3   1400.00
+5   5000.00
+Name: Gakorn, dtype: float64
+```
+
+
+
+#### `Garissa`
+
+Contains
+
+First 5 non-null values:
+
+```
+0   4200.00
+1   4000.00
+2   6400.00
+3   5600.00
+5   5400.00
+Name: Garissa, dtype: float64
+```
+
+
+
+#### `Gem`
+
+Contains
+
+Unique values in the column:
+
+```
+9000.00     4
+5600.00     4
+4800.00     4
+3600.00     4
+2600.00     4
+800.00      4
+10800.00    2
+4500.00     2
+4400.00     2
+3400.00     2
+3000.00     2
+1200.00     2
+650.00      2
+Name: Gem, dtype: int64
+```
+
+
+
+#### `Imenti`
+
+Contains
+
+First 5 non-null values:
+
+```
+0    2400.0
+1    2600.0
+2    8000.0
+3    3600.0
+4    4000.0
+Name: Imenti, dtype: object
+```
+
+
+
+#### `Imenti North`
+
+Contains
+
+First 5 non-null values:
+
+```
+0    2900
+1    2700
+2    7200
+3    3150
+4    4000
+Name: Imenti North, dtype: object
+```
+
+
+
+#### `Imenti South`
+
+Contains
+
+Unique values in the column:
+
+```
+4500.00    12
+2500.00     8
+3600.00     4
+600.00      4
+2300.00     4
+8000.00     4
+700.00      4
+900.00      4
+9900.00     2
+1200.00     2
+300.00      2
+650.00      2
+1920.00     2
+1400.00     2
+1800.00     2
+2700.00     2
+3000.00     2
+6300.00     2
+250.00      2
+Name: Imenti South, dtype: int64
+```
+
+
+
+#### `Isiolo`
+
+Contains
+
+First 5 non-null values:
+
+```
+0   3000.00
+1   6000.00
+2   9000.00
+3   4500.00
+4   4500.00
+Name: Isiolo, dtype: object
+```
+
+
+
+#### `Kajiado`
+
+Contains
+
+First 5 non-null values:
+
+```
+0    2900.00
+5    6500.00
+7    6500.00
+9    7200.00
+14   3200.00
+Name: Kajiado, dtype: float64
+```
+
+
+
+#### `Kakamega`
+
+Contains
+
+First 5 non-null values:
+
+```
+0    2800.0
+1    2600.0
+2    5200.0
+3    3200.0
+5    8000.0
+Name: Kakamega, dtype: object
+```
+
+
+
+#### `Kapsowar`
+
+Contains
+
+Unique values in the column:
+
+```
+6000.00     2
+1200.00     2
+12000.00    1
+4800.00     1
+3420.00     1
+2800.00     1
+1500.00     1
+1485.00     1
+975.00      1
+810.00      1
+800.00      1
+326.00      1
+310.00      1
+280.00      1
+264.00      1
+150.00      1
+Name: Kapsowar, dtype: int64
+```
+
+
+
+#### `Karatina`
+
+Contains
+
+First 5 non-null values:
+
+```
+0   3000.00
+1   1000.00
+2   6500.00
+3   5000.00
+4   4200.00
+Name: Karatina, dtype: float64
+```
+
+
+
+#### `Kg`
+
+Contains
+
+First 5 non-null values:
+
+```
+0    90.00
+1   115.00
+2    90.00
+3    90.00
+4    90.00
+Name: Kg, dtype: object
+```
+
+
+
+#### `Kibwezi`
+
+Contains
+
+Unique values in the column:
+
+```
+4500.00     6
+6500.00     4
+7200.00     4
+13500.00    2
+2500.00     2
+650.00      2
+1250.00     2
+1500.00     2
+1800.00     2
+1860.00     2
+1900.00     2
+3400.00     2
+2970.00     2
+3450.00     2
+3500.00     2
+3600.00     2
+5000.00     2
+5400.00     2
+6300.00     2
+600.00      2
+Name: Kibwezi, dtype: int64
+```
+
+
+
+#### `Kisii`
+
+Contains
+
+First 5 non-null values:
+
+```
+0      3600.0
+2      6400.0
+6      6400.0
+13    11400.0
+14     4000.0
+Name: Kisii, dtype: object
+```
+
+
+
+#### `Kisumu`
+
+Contains
+
+First 5 non-null values:
+
+```
+0    3600.0
+1    2400.0
+2    7200.0
+3    3600.0
+5    8200.0
+Name: Kisumu, dtype: object
+```
+
+
+
+#### `Kitale`
+
+Contains
+
+First 5 non-null values:
+
+```
+0   2500.00
+1   2800.00
+2   5400.00
+3   3600.00
+4   4500.00
+Name: Kitale, dtype: object
+```
+
+
+
+#### `Kitui`
+
+Contains
+
+First 5 non-null values:
+
+```
+0    3150.0
+1    2500.0
+2    7200.0
+3    3600.0
+5    7200.0
+Name: Kitui, dtype: object
+```
+
+
+
+#### `Loitokitok`
+
+Contains
+
+First 5 non-null values:
+
+```
+0     2500.0
+1     1500.0
+7     4900.0
+9     7200.0
+14    3000.0
+Name: Loitokitok, dtype: object
+```
+
+
+
+#### `Machakos`
+
+Contains
+
+First 5 non-null values:
+
+```
+0    3100.0
+1    2600.0
+5    5900.0
+6    5800.0
+7    5500.0
+Name: Machakos, dtype: object
+```
+
+
+
+#### `Malindi`
+
+Contains
+
+First 5 non-null values:
+
+```
+0   3420.00
+1   3000.00
+2   6300.00
+3   5400.00
+4   5400.00
+Name: Malindi, dtype: object
+```
+
+
+
+#### `Mande`
+
+Contains
+
+Unique values in the column:
+
+```
+5400.00    3
+2500.00    2
+4800.00    2
+9000.00    1
+400.00     1
+600.00     1
+700.00     1
+950.00     1
+2100.00    1
+3800.00    1
+3500.00    1
+6500.00    1
+4000.00    1
+4050.00    1
+4500.00    1
+5000.00    1
+350.00     1
+Name: Mande, dtype: int64
+```
+
+
+
+#### `Marakwet`
+
+Contains
+
+Unique values in the column:
+
+```
+6000.00     2
+1200.00     2
+12000.00    1
+4800.00     1
+3420.00     1
+2800.00     1
+1500.00     1
+1485.00     1
+1000.00     1
+975.00      1
+810.00      1
+800.00      1
+326.00      1
+310.00      1
+280.00      1
+264.00      1
+Name: Marakwet, dtype: int64
+```
+
+
+
+#### `Marimanti`
+
+Contains
+
+First 5 non-null values:
+
+```
+0    3200.00
+1    1200.00
+2   10600.00
+3    3000.00
+7    6000.00
+Name: Marimanti, dtype: float64
+```
+
+
+
+#### `Mathira`
+
+Contains
+
+First 5 non-null values:
+
+```
+0   2000.00
+2   4500.00
+3   3500.00
+6   5000.00
+7   4500.00
+Name: Mathira, dtype: float64
+```
+
+
+
+#### `Maua`
+
+Contains
+
+Unique values in the column:
+
+```
+1500.00    6
+2700.00    6
+2600.00    4
+4500.00    4
+4000.00    4
+2500.00    4
+8500.00    2
+900.00     2
+1800.00    2
+2200.00    2
+3000.00    2
+7200.00    2
+3600.00    2
+5000.00    2
+5400.00    2
+5700.00    2
+600.00     2
+Name: Maua, dtype: int64
+```
+
+
+
+#### `Mdra`
+
+Contains
+
+Unique values in the column:
+
+```
+3000    3
+4500    3
+4400    2
+1800    2
+2400    1
+nj      1
+3200    1
+950     1
+4000    1
+3600    1
+390     1
+9000    1
+350     1
+2500    1
+600     1
+700     1
+Name: Mdra, dtype: int64
+```
+
+
+
+#### `Meru`
+
+Contains
+
+First 5 non-null values:
+
+```
+0    1000.0
+1    2000.0
+2    5800.0
+3    2250.0
+6    4000.0
+Name: Meru, dtype: object
+```
+
+
+
+#### `Mombasa`
+
+Contains
+
+First 5 non-null values:
+
+```
+0    3000.0
+1    6200.0
+2    8100.0
+3    2700.0
+6    6300.0
+Name: Mombasa, dtype: object
+```
+
+
+
+#### `Mwala`
+
+Contains
+
+Unique values in the column:
+
+```
+5400.00    6
+4500.00    6
+2800.00    6
+2700.00    4
+1800.00    4
+1400.00    4
+1200.00    4
+700.00     4
+500.00     4
+400.00     4
+300.00     4
+3000.00    2
+2500.00    2
+450.00     2
+350.00     2
+250.00     2
+Name: Mwala, dtype: int64
+```
+
+
+
+#### `Mwingi`
+
+Contains
+
+Unique values in the column:
+
+```
+6000.00    8
+5000.00    8
+3000.00    8
+2500.00    6
+320.00     6
+3500.00    6
+6400.00    6
+3800.00    4
+2000.00    4
+1750.00    4
+1000.00    2
+350.00     2
+400.00     2
+450.00     2
+600.00     2
+650.00     2
+6700.00    2
+1500.00    2
+2200.00    2
+2700.00    2
+2800.00    2
+3300.00    2
+3600.00    2
+4500.00    2
+300.00     2
+Name: Mwingi, dtype: int64
+```
+
+
+
+#### `Nairobi`
+
+Contains
+
+First 5 non-null values:
+
+```
+0    3200.0
+1    3500.0
+2    6500.0
+3    3800.0
+5    6500.0
+Name: Nairobi, dtype: object
+```
+
+
+
+#### `Nakuru`
+
+Contains
+
+First 5 non-null values:
+
+```
+0    3200.0
+1    2000.0
+2    6500.0
+3    3150.0
+4    3150.0
+Name: Nakuru, dtype: object
+```
+
+
+
+#### `Nkubu`
+
+Contains
+
+Unique values in the column:
+
+```
+400.00     3
+1000.00    3
+4500.00    2
+900.00     2
+8600.00    1
+1800.00    1
+650.00     1
+750.00     1
+800.00     1
+1750.00    1
+2200.00    1
+6000.00    1
+2400.00    1
+2900.00    1
+3000.00    1
+3800.00    1
+4300.00    1
+4400.00    1
+5300.00    1
+250.00     1
+Name: Nkubu, dtype: int64
+```
+
+
+
+#### `Nyahururu`
+
+Contains
+
+First 5 non-null values:
+
+```
+0    2700.0
+1    1150.0
+2    6800.0
+3    4800.0
+4    3200.0
+Name: Nyahururu, dtype: object
+```
+
+
+
+#### `Siaya`
+
+Contains
+
+Unique values in the column:
+
+```
+2000.00    6
+2800.00    6
+1000.00    4
+3000.00    4
+2600.00    4
+650.00     4
+1500.00    4
+400.00     2
+500.00     2
+550.00     2
+600.00     2
+8800.00    2
+6800.00    2
+3600.00    2
+4200.00    2
+6000.00    2
+6400.00    2
+260.00     2
+Name: Siaya, dtype: int64
+```
+
+
+
+#### `Tavata`
+
+Contains
+
+First 5 non-null values:
+
+```
+0    3000.0
+1    5500.0
+2    5500.0
+3    4050.0
+4    5500.0
+Name: Tavata, dtype: object
+```
+
+
+
+#### `Tharaka North`
+
+Contains
+
+First 5 non-null values:
+
+```
+0    2900.00
+1    1800.00
+2   10500.00
+3    2700.00
+7    6100.00
+Name: Tharaka North, dtype: float64
+```
+
+
+
+#### `Tharaka South`
+
+Contains
+
+First 5 non-null values:
+
+```
+0   2800.00
+2   5850.00
+3   5850.00
+6   5400.00
+8   1800.00
+Name: Tharaka South, dtype: float64
+```
+
+
+
+#### `Thika`
+
+Contains
+
+First 5 non-null values:
+
+```
+0    2700.0
+1    2200.0
+5    5200.0
+6    5000.0
+7    5000.0
+Name: Thika, dtype: object
+```
+
+
+
+#### `Unit`
+
+Contains
+
+Unique values in the column:
+
+```
+Bag          41899
+Ext Bag       4362
+Med Bunch     2908
+net           2908
+Lg Box        2908
+Tray          1454
+crate         1454
+Sm Basket     1454
+Dozen         1454
+Name: Unit, dtype: int64
+```
+
+
+
+#### `VARIETY`
+
+Contains
+
+Unique values in the column:
+
+```
+                  683
+HORTICULTURE      342
+CEREAL            342
+OTHERS            342
+LEGUMES           342
+ROOTS & TUBERS    342
+Name: VARIETY, dtype: int64
+```
+
+
+
+#### `Wajir`
+
+Contains
+
+Unique values in the column:
+
+```
+2400.00    6
+2000.00    6
+330.00     4
+4500.00    4
+1800.00    4
+400.00     4
+3400.00    3
+1950.00    3
+3600.00    2
+2300.00    2
+900.00     1
+380.00     1
+420.00     1
+6400.00    1
+950.00     1
+1600.00    1
+3000.00    1
+1900.00    1
+Name: Wajir, dtype: int64
+```
+
+
+
+#### `Yala`
+
+Contains
+
+Unique values in the column:
+
+```
+3000.00    8
+6200.00    4
+4500.00    4
+2000.00    4
+9500.00    2
+6000.00    2
+4800.00    2
+3200.00    2
+1300.00    2
+1200.00    2
+900.00     2
+670.00     2
+Name: Yala, dtype: int64
+```
+
+
+
+#### `date`
+
+Contains
+
+First 5 non-null values:
+
+```
+0    2014-04-01 00:00:00
+1    2014-04-01 00:00:00
+2    2014-04-01 00:00:00
+3    2014-04-01 00:00:00
+4    2014-04-01 00:00:00
+Name: date, dtype: object
+```
 
 ## `raw/Elevation Data`
 
@@ -106,6 +1226,27 @@ geography | Kenya
 
 Soil properties from the [ISRIC Kenya SOTER database](http://www.isric.org/projects/soter-kenya-kensoter). Version 2.0 [is now available for download](http://www.isric.org/data/soil-and-terrain-database-kenya-ver-20-kensoter) so we may consider updating.
 
+Here are the present soil parameters:
+
+ - Organic carbon
+ - Total nitrogen
+ - Soil reaction (pHH2O)
+ - Cation exchange capacity (CECsoil)
+ - Cation exchange capacity of clay size fraction (CECclay) ● ‡
+ - Base saturation (as % of CECsoil) ‡
+ - Effective cation exchange capacity (ECEC) † ‡
+ - Aluminum saturation (as % of ECEC) ‡
+ - CaCO3 content
+ - Gypsum content
+ - Exchangeable sodium percentage (ESP) ‡
+ - Electrical conductivity of saturated paste (ECe)
+ - Bulk density
+ - Coarse fragments (volume %)
+ - Sand (mass %)
+ - Silt (mass %)
+ - Clay (mass %)
+ - Available water capacity (AWC; from -33 to -1500 kPa; % w/v)
+
 
 ## `raw/User Data`
 
@@ -114,20 +1255,325 @@ Data from FarmDrive about their farmers.
 
 ### `raw/User Data/tbl_farmer.csv`
 
+ Summary | 
+ --- | ---
+type | CSV
+time | N/A
+geography | N/A
 
-### `raw/User Data/user_data.csv`
+Raw database table dump for farmers in the FarmDrive system.
 
-Same basic data as [`tbl_farmer.csv`](), but with some manual updates to location.
+ - [date_created](date_created)
+ - [phone_number](phone_number)
+ - [farmer_name](farmer_name)
+ - [id_number](id_number)
+ - [county](county)
+ - [constituency](constituency)
+ - [ward](ward)
+ - [tocode](tocode)
+ - [language_preference](language_preference)
+ - [dob](dob)
+ - [gender](gender)
+ - [marital_status](marital_status)
+ - [dependants_number](dependants_number)
+ - [sub_location](sub_location)
+ - [wards_coded](wards_coded)
 
+#### `date_created`
+
+Contains
+
+First 5 non-null values:
+
+```
+2     2016-05-27 07:58:42.747149+03
+8     2016-05-30 13:52:03.299849+03
+9      2016-05-31 13:26:33.19348+03
+10    2016-06-09 08:59:46.489033+03
+11    2016-02-16 11:25:41.941277+03
+Name: date_created, dtype: object
+```
+
+
+
+#### `phone_number`
+
+Contains
+
+First 5 non-null values:
+
+```
+2    254714000000.00
+8    254717000000.00
+9    254728000000.00
+10   254714000000.00
+11   254728000000.00
+Name: phone_number, dtype: float64
+```
+
+
+
+#### `farmer_name`
+
+Contains
+
+First 5 non-null values:
+
+```
+2       Angela De Michele
+8        Agathe Blanchard
+9            Paris Bosire
+10      Benjamin mwasambo
+11    FRANCE KAMAU MWAURA
+Name: farmer_name, dtype: object
+```
+
+
+
+#### `id_number`
+
+Contains
+
+First 5 non-null values:
+
+```
+2     12345678
+8     45678123
+9     28229001
+10    28279793
+11     6819595
+Name: id_number, dtype: object
+```
+
+
+
+#### `county`
+
+Contains
+
+Unique values in the column:
+
+```
+Nakuru             106
+Kiambu             104
+Nyandarua           88
+Baringo             50
+Uasin Gishu         44
+Nyeri                8
+Elgeyo/Marakwet      7
+Nandi                5
+Kericho              4
+Embu                 3
+Bungoma              3
+kiambu               3
+Migori               2
+Machakos             2
+Nairobi              2
+KIAMBU               2
+nairobi              1
+Uansin Gishu         1
+tharaka nithi        1
+kirinyaga            1
+Kisii                1
+Mombasa              1
+kisumu               1
+Nyamira              1
+Murang'a             1
+Name: county, dtype: int64
+```
+
+
+
+#### `constituency`
+
+Contains
+
+First 5 non-null values:
+
+```
+2     Changamwe
+8         Kibra
+10       Rongai
+11      GATANGA
+12       BORABU
+Name: constituency, dtype: object
+```
+
+
+
+#### `ward`
+
+Contains
+
+First 5 non-null values:
+
+```
+2       Kipevu
+8      Woodley
+9       Borabu
+10       Visoi
+17    kaptagat
+Name: ward, dtype: object
+```
+
+
+
+#### `tocode`
+
+Contains
+
+First 5 non-null values:
+
+```
+2     KipevuChangamweMombasa
+8        WoodleyKibraNairobi
+9                     Borabu
+10         VisoiRongaiNakuru
+11                   GATANGA
+Name: tocode, dtype: object
+```
+
+
+
+#### `language_preference`
+
+Contains
+
+Unique values in the column:
+
+```
+en           920
+sw           880
+Kiswahili     58
+english        7
+English        5
+ENGLISH        1
+Name: language_preference, dtype: int64
+```
+
+
+
+#### `dob`
+
+Contains
+
+First 5 non-null values:
+
+```
+2     1988
+8     1995
+9     1991
+10    1990
+11    1963
+Name: dob, dtype: object
+```
+
+
+
+#### `gender`
+
+Contains
+
+Unique values in the column:
+
+```
+2    1025
+1     846
+Name: gender, dtype: int64
+```
+
+
+
+#### `marital_status`
+
+Contains
+
+Unique values in the column:
+
+```
+1    1699
+2     156
+3      13
+4       3
+Name: marital_status, dtype: int64
+```
+
+
+
+#### `dependants_number`
+
+Contains
+
+Unique values in the column:
+
+```
+2.00       117
+3.00       104
+4.00        86
+5.00        75
+1.00        59
+6.00        48
+7.00        20
+8.00        18
+0.00        12
+10.00        9
+9.00         6
+12.00        2
+1952.00      1
+11.00        1
+16.00        1
+25.00        1
+42.00        1
+1940.00      1
+1986.00      1
+Name: dependants_number, dtype: int64
+```
+
+
+
+#### `sub_location`
+
+Contains
+
+First 5 non-null values:
+
+```
+2         Kaptich
+8         Woodley
+9         Woodley
+10      Chepterit
+17    Kokwotendwo
+Name: sub_location, dtype: object
+```
+
+
+
+#### `wards_coded`
+
+Contains
+
+First 5 non-null values:
+
+```
+2     PORT REITZ
+8     MUGUMU-INI
+9         RIGOMA
+10         VISOI
+11      KILIMANI
+Name: wards_coded, dtype: object
+```
 
 ### `raw/User Data/ward_leve_data.rds`
+
+ Summary | 
+ --- | ---
+type | RDS
+time | N/A
+geography | N/A
 
 R object file with dataframe that looks like it contains counts of "registrations" for geographies in Kenya.
 
 It's possible that these are voter registrations in Kenya (so can approximate population). Other voter data [seems to be available here](http://www.iebc.or.ke/index.php/2015-01-15-11-10-24/downloads/category/statistics-of-voters). For example, sum of `BARINGO NORTH` rows is ~= to the [voter registrations per Constituency](http://www.iebc.or.ke/index.php/2015-01-15-11-10-24/downloads/item/voters-register-statistics-per-constituency?category_id=56).
-
-**Questions for Elvis:**
- - What is this tracking?
 
 Head of the file:
 ```
@@ -143,7 +1589,12 @@ Head of the file:
 
 ## `raw/Ward Shapefiles`
 
-Geographic boundaries for political units in Kenya.
+Summary | 
+--- | ---
+type | Shapefiles
+time | N/A
+geography | Kenya
 
+Geographic boundaries for political units in Kenya.
 
 Contains shapefiles for `ward.results` and `ward.results.formatted`. It looks like `ward.results` is properly projected with WGS84 (4326), so we should favor that one.
