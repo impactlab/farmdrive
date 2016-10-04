@@ -1,6 +1,6 @@
 ## Requirements:
- - Python 3.5
- - Conda
+ - Linux system or OSX (You could install Make for Windows, and things _should_ work there as well, but it is untested.)
+ - [Anaconda distribution of Python **3.5**](https://www.continuum.io/downloads)
 
 ## Create new environment
  - `make new_env`
