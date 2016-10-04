@@ -23,7 +23,6 @@ dependencies:
 - ipywidgets=5.2.2=py35_0
 - jbig=2.1=0
 - jinja2=2.8=py35_1
-- jpeg=8d=1
 - jpeg=8d=2
 - jsonschema=2.5.1=py35_0
 - jupyter_client=4.4.0=py35_0
@@ -54,9 +53,11 @@ dependencies:
 - proj4=4.9.2=0
 - prompt_toolkit=1.0.3=py35_0
 - ptyprocess=0.5.1=py35_0
+- py=1.4.31=py35_0
 - pygments=2.1.3=py35_0
 - pyparsing=2.1.4=py35_0
 - pyqt=5.6.0=py35_0
+- pytest=2.9.2=py35_0
 - python=3.5.2=0
 - python-dateutil=2.5.3=py35_0
 - python.app=1.2=py35_4
@@ -81,6 +82,7 @@ dependencies:
 - wheel=0.29.0=py35_0
 - widgetsnbextension=1.2.6=py35_0
 - xerces-c=3.1.4=0
+- xlrd=1.0.0=py35_0
 - xz=5.2.2=0
 - yaml=0.1.6=0
 - zlib=1.2.8=3
@@ -94,6 +96,7 @@ dependencies:
   - coverage==4.2
   - docutils==0.12
   - flake8==3.0.4
+  - fuzzywuzzy==0.12.0
   - imagesize==0.7.1
   - ipython-genutils==0.1.0
   - jmespath==0.9.0
