@@ -56,12 +56,12 @@ This processed file has the following columns:
  - [Loitokitok](#loitokitok)
  - [Machakos](#machakos)
  - [Malindi](#malindi)
- - [Mande](#mande)
+ - [Mande](#mande) #Should read Mandera
  - [Marakwet](#marakwet)
  - [Marimanti](#marimanti)
  - [Mathira](#mathira)
  - [Maua](#maua)
- - [Mdra](#mdra)
+ - [Mdra](#mdra) #Should read Mandera
  - [Meru](#meru)
  - [Mombasa](#mombasa)
  - [Mwala](#mwala)
