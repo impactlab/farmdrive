@@ -56,12 +56,11 @@ This processed file has the following columns:
  - [Loitokitok](#loitokitok)
  - [Machakos](#machakos)
  - [Malindi](#malindi)
- - [Mande](#mande) #Should read Mandera
+ - [Mandera](#mandera)
  - [Marakwet](#marakwet)
  - [Marimanti](#marimanti)
  - [Mathira](#mathira)
  - [Maua](#maua)
- - [Mdra](#mdra) #Should read Mandera
  - [Meru](#meru)
  - [Mombasa](#mombasa)
  - [Mwala](#mwala)
@@ -95,6 +94,7 @@ First 5 non-null values:
 6   3400.00
 Name: Bungoma, dtype: object
 ```
+
 
 
 #### `Busia`
@@ -138,12 +138,12 @@ Contains
 Unique values in the column:
 
 ```
-HORTICULTURE                                303
-CEREAL                                      303
-                                            303
-OTHERS                                      303
 LEGUMES                                     303
+CEREAL                                      303
+OTHERS                                      303
+                                            303
 ROOTS & TUBERS                              303
+HORTICULTURE                                303
 * means the  Commodity is not available.      6
 * = Commodity, not available.                 1
 Name: Class, dtype: int64
@@ -607,31 +607,19 @@ Name: Malindi, dtype: object
 
 
 
-#### `Mande`
+#### `Mandera`
 
 Contains
 
-Unique values in the column:
+First 5 non-null values:
 
 ```
-5400.00    3
-2500.00    2
-4800.00    2
-9000.00    1
-400.00     1
-600.00     1
-700.00     1
-950.00     1
-2100.00    1
-3800.00    1
-3500.00    1
-6500.00    1
-4000.00    1
-4050.00    1
-4500.00    1
-5000.00    1
-350.00     1
-Name: Mande, dtype: int64
+0    3600
+3    3000
+6    4500
+7    4500
+8    4500
+Name: Mandera, dtype: object
 ```
 
 
@@ -723,34 +711,6 @@ Unique values in the column:
 5700.00    2
 600.00     2
 Name: Maua, dtype: int64
-```
-
-
-
-#### `Mdra`
-
-Contains
-
-Unique values in the column:
-
-```
-3000    3
-4500    3
-4400    2
-1800    2
-2400    1
-nj      1
-3200    1
-950     1
-4000    1
-3600    1
-390     1
-9000    1
-350     1
-2500    1
-600     1
-700     1
-Name: Mdra, dtype: int64
 ```
 
 
@@ -1044,13 +1004,13 @@ Unique values in the column:
 ```
 Bag          41899
 Ext Bag       4362
-Med Bunch     2908
-net           2908
 Lg Box        2908
-Tray          1454
+net           2908
+Med Bunch     2908
 crate         1454
-Sm Basket     1454
 Dozen         1454
+Sm Basket     1454
+Tray          1454
 Name: Unit, dtype: int64
 ```
 
@@ -1064,11 +1024,11 @@ Unique values in the column:
 
 ```
                   683
-HORTICULTURE      342
+LEGUMES           342
 CEREAL            342
 OTHERS            342
-LEGUMES           342
 ROOTS & TUBERS    342
+HORTICULTURE      342
 Name: VARIETY, dtype: int64
 ```
 
@@ -1573,7 +1533,7 @@ Name: wards_coded, dtype: object
 
 ### `raw/User Data/ward_leve_data.rds`
 
- Summary | 
+ Summary | - 
  --- | ---
 type | RDS
 time | N/A
