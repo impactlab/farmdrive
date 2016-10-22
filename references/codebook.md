@@ -1,22 +1,33 @@
 # Raw files/directories covered in this codebook
-  - [`raw/Crop Prices`](#rawcrop-prices)
-  - [`processed/all_crop_prices.csv`](#processedall_crop_pricescsv)
-  - [`raw/Elevation Data`](#rawelevation-data)
-  - [`raw/FAO-AGROECOLOGICAL DATA`](#rawfao-agroecological-data)
-  - [`raw/Rainfall Data`](#rawrainfall-data)
-  - [`raw/Soil Data/SOTWIS_Kenya_ver1.0`](#rawsoil-datasotwis_kenya_ver10)
-  - [`raw/User Data`](#rawuser-data)
-  - [`raw/User Data/ward_leve_data.rds`](#rawuser-dataward_leve_datards)
-  - [`raw/Ward Shapefiles`](#rawward-shapefiles)
+
+- [`raw/Crop Prices`](#rawcrop-prices)
+- [`raw/Crop Yield/Admin Level 1 - Crops in Tons.csv`](#rawcrop-yieldadmin-level-1-crops-in-tonscsv)
+- [`processed/all_crop_prices.csv`](#processedall_crop_pricescsv)
+- [`raw/Elevation Data`](#rawelevation-data)
+- [`raw/FAO-AGROECOLOGICAL DATA`](#rawfao-agroecological-data)
+- [`raw/Rainfall Data`](#rawrainfall-data)
+- [`raw/Socio Economic Data/Census2009`](#)
+- [`raw/Socio Economic Data/County Government Expenditure 2013_2014.csv`](#)
+- [`raw/Socio Economic Data/DHS/`](#)
+- [`raw/Socio Economic Data/FinAccess2016`](#)
+- [`raw/Socio Economic Data/KIHBS2005/Final Poverty Estimates All.xls`](#)
+- [`raw/Socio Economic Data/KIHBS2005/Proportion_of_Households_Engaged_in_Crop_Farming_by_Region_County_Estimates_-_2005_6.csv`](#)
+- [`raw/Socio Economic Data/KIHBS2005/Population_and_Household_Characteristics_County_estimates_2005_6.csv`](#)
+- [`raw/Socio Economic Data/KenInfo_2012_en.csv`](#)
+- [`raw/Socio Economic Data/Socio Economic data of Kenya, 2011`](#)
+- [`raw/Soil Data/SOTWIS_Kenya_ver1.0`](#rawsoil-datasotwis_kenya_ver10)
+- [`raw/User Data`](#rawuser-data)
+- [`raw/User Data/ward_leve_data.rds`](#rawuser-dataward_leve_datards)
+- [`raw/Ward Shapefiles`](#rawward-shapefiles)
 
 
 ## `raw/Crop Prices`
 
-Summary | -  
- --- | ---
-type | Excel files
-time | Daily 2010-2015; Monthly 2015
-geography | See below
+| Summary   | -                             |
+| --------- | ----------------------------- |
+| type      | Excel files                   |
+| time      | Daily 2010-2015; Monthly 2015 |
+| geography | See below                     |
 
 This is market prices for various commodities (e.g., Maize, Wheat, Cabbages, etc.). Prices have a geographic region in Kenya associated with them. There may be a way to estimate yield based on price (depending on relationship of supply/demand).
 
@@ -28,57 +39,57 @@ This raw data is cleaned and aligned into a single csv file: `data/processed/all
 
 This processed file has the following columns:
 
- - [Bungoma](#bungoma)
- - [Busia](#busia)
- - [Chwele](#chwele)
- - [Class](#class)
- - [Code](#code)
- - [Commodity](#commodity)
- - [Eldoret](#eldoret)
- - [Embu](#embu)
- - [Gakorn](#gakorn)
- - [Garissa](#garissa)
- - [Gem](#gem)
- - [Imenti](#imenti)
- - [Imenti North](#imenti north)
- - [Imenti South](#imenti south)
- - [Isiolo](#isiolo)
- - [Kajiado](#kajiado)
- - [Kakamega](#kakamega)
- - [Kapsowar](#kapsowar)
- - [Karatina](#karatina)
- - [Kg](#kg)
- - [Kibwezi](#kibwezi)
- - [Kisii](#kisii)
- - [Kisumu](#kisumu)
- - [Kitale](#kitale)
- - [Kitui](#kitui)
- - [Loitokitok](#loitokitok)
- - [Machakos](#machakos)
- - [Malindi](#malindi)
- - [Mandera](#mandera)
- - [Marakwet](#marakwet)
- - [Marimanti](#marimanti)
- - [Mathira](#mathira)
- - [Maua](#maua)
- - [Meru](#meru)
- - [Mombasa](#mombasa)
- - [Mwala](#mwala)
- - [Mwingi](#mwingi)
- - [Nairobi](#nairobi)
- - [Nakuru](#nakuru)
- - [Nkubu](#nkubu)
- - [Nyahururu](#nyahururu)
- - [Siaya](#siaya)
- - [Tavata](#tavata)
- - [Tharaka North](#tharaka north)
- - [Tharaka South](#tharaka south)
- - [Thika](#thika)
- - [Unit](#unit)
- - [VARIETY](#variety)
- - [Wajir](#wajir)
- - [Yala](#yala)
- - [date](#date)
+- [Bungoma](#bungoma)
+- [Busia](#busia)
+- [Chwele](#chwele)
+- [Class](#class)
+- [Code](#code)
+- [Commodity](#commodity)
+- [Eldoret](#eldoret)
+- [Embu](#embu)
+- [Gakorn](#gakorn)
+- [Garissa](#garissa)
+- [Gem](#gem)
+- [Imenti](#imenti)
+- [Imenti North](#imenti north)
+- [Imenti South](#imenti south)
+- [Isiolo](#isiolo)
+- [Kajiado](#kajiado)
+- [Kakamega](#kakamega)
+- [Kapsowar](#kapsowar)
+- [Karatina](#karatina)
+- [Kg](#kg)
+- [Kibwezi](#kibwezi)
+- [Kisii](#kisii)
+- [Kisumu](#kisumu)
+- [Kitale](#kitale)
+- [Kitui](#kitui)
+- [Loitokitok](#loitokitok)
+- [Machakos](#machakos)
+- [Malindi](#malindi)
+- [Mandera](#mandera)
+- [Marakwet](#marakwet)
+- [Marimanti](#marimanti)
+- [Mathira](#mathira)
+- [Maua](#maua)
+- [Meru](#meru)
+- [Mombasa](#mombasa)
+- [Mwala](#mwala)
+- [Mwingi](#mwingi)
+- [Nairobi](#nairobi)
+- [Nakuru](#nakuru)
+- [Nkubu](#nkubu)
+- [Nyahururu](#nyahururu)
+- [Siaya](#siaya)
+- [Tavata](#tavata)
+- [Tharaka North](#tharaka north)
+- [Tharaka South](#tharaka south)
+- [Thika](#thika)
+- [Unit](#unit)
+- [VARIETY](#variety)
+- [Wajir](#wajir)
+- [Yala](#yala)
+- [date](#date)
 
 #### `Bungoma`
 
@@ -1105,11 +1116,11 @@ Name: date, dtype: object
 
 ## `raw/Elevation Data`
 
-Summary | -  
- --- | ---
-type | TIF (raster)
-time | N/A
-geography | All of Kenya covered by the tiles (not masked to just Kenya).
+| Summary   | -                                        |
+| --------- | ---------------------------------------- |
+| type      | TIF (raster)                             |
+| time      | N/A                                      |
+| geography | All of Kenya covered by the tiles (not masked to just Kenya). |
 
 This folder was empty except for a link to [SRTM Data](http://srtm.csi.cgiar.org/SELECTION/inputCoord.asp). Downloaded the tiles that cover Kenya:
 
@@ -1128,31 +1139,31 @@ Shapefiles for Agro-ecological zones in Kenya and Africa.
 
 ### `raw/FAO-AGROECOLOGICAL DATA/AEZ16_CLAS--SSA.tif`
 
-Summary | -  
- --- | ---
-type | TIF
-time | N/A
-geography | All of Africa
+| Summary   | -             |
+| --------- | ------------- |
+| type      | TIF           |
+| time      | N/A           |
+| geography | All of Africa |
 
 Raster of 16 levels of agro-ecological zones in Africa.
 
 ### `raw/FAO-AGROECOLOGICAL DATA/aez8_clas--ssa.tif_5`
 
-Summary | -  
- --- | ---
-type | TIF
-time | N/A
-geography | All of Africa
+| Summary   | -             |
+| --------- | ------------- |
+| type      | TIF           |
+| time      | N/A           |
+| geography | All of Africa |
 
 Raster of 8 levels of agro-ecological zones in Africa.
 
 ### `raw/FAO-AGROECOLOGICAL DATA/Kenya_aezones`
 
-Summary | -  
- --- | ---
-type | Shapefile
-time | N/A
-geography | Does not include "non-cultivated" areas.
+| Summary   | -                                        |
+| --------- | ---------------------------------------- |
+| type      | Shapefile                                |
+| time      | N/A                                      |
+| geography | Does not include "non-cultivated" areas. |
 
 From Kenya_Aez.doc:
 > Coverage showing the agro-ecological zones of Kenya based on temperature belts (maximum temperature limits within which the main crops of Kenya can flourish) and the main zones (probability of meeting the temperature and water requirements of the leading crops i.e. the climatic yield potential). Its aim is to provide the framework for ecological land-use potential.
@@ -1169,14 +1180,156 @@ From Kenya_Aez.doc:
 > (IL) Inner Lowland (Annual mean temperature >24 degrees, M.maximum>31 degrees)
 > (CL) Coastal Lowland (Annual mean temperature >24, M.maximum <31 degrees)
 
+## `raw/Socio Economic Data/Census2009`
+
+| Summary   | -          |
+| --------- | ---------- |
+| type      | Excel |
+| time      | 2009 |
+| geography | Kenya (mostly by district) |
+| source | [Kenya Open Data Portal](https://www.opendata.go.ke/) |
+
+Contains files with the questions for:
+ - [Household Asset Ownership](https://www.opendata.go.ke/Poverty/Vol-II-q-15-Households-Assets-Ownership/wu73-i6md)
+ - [Housing Roofing Material](https://www.opendata.go.ke/Housing-and-Real-Estate/2009-Census-Volume-II-Table-5-Households-by-main-t/qchg-5kp7)
+ - [Wall material](https://www.opendata.go.ke/Housing-and-Real-Estate/2009-Census-Volume-II-Table-6-Households-by-main-t/nhkv-ij8n)
+
+
+## `raw/Socio Economic Data/County Government Expenditure 2013_2014.csv`
+
+| Summary   | -          |
+| --------- | ---------- |
+| type      | CSV |
+| time      | 2103-2014 |
+| geography | Kenya (mostly by district) |
+| source | [Kenya Open Data Portal( https://data.humdata.org/dataset/county-government-expenditure-2013-2014/resource/45689481-e265-4b51-b6b3-a6abd2c7031e |
+
+Expenditure on different categories by governments.
+
+## `raw/Socio Economic Data/DHS/`
+
+| Summary   | -          |
+| --------- | ---------- |
+| type      | STATA, SPSS, SAS formats available (we use STATA `.dta`) |
+| time      | 1989, 1993, 1998, 2003, 2008-2009, 2014 |
+| geography | Kenya (varying levels of geographic resolution)      |
+| source | [DHS Program](https://dhsprogram.com/data/dataset_admin/download-datasets.cfm) |
+
+Access to the raw survey data can be requested here:
+https://dhsprogram.com/
+
+We have selected the latests DHS data (2014) for inclusion (but other years as listed above are available). The most important variables for our analysis are `HV270` and `HV271`, which is a wealth index estimate.
+
+For complete coverage of this dataset, see the [DHS Recode Manual](http://dhsprogram.com/pubs/pdf/DHSG4/Recode6_DHS_22March2013_DHSG4.pdf).
+
+Note: There is also GPS data available for survey participants. Access to this more sensitive data is pending, but can also be requested through the DHS program site. It is granted separately of the survey data, which has less-fine-grained resolution.
+
+Note: These data formats are painful for modern tools. The most effective route is to use the `read.stata` function in the `foreign` library in R.
+
+## `raw/Socio Economic Data/FinAccess2016`
+
+| Summary   | -          |
+| --------- | ---------- |
+| type      | Excel |
+| time      | 2016 |
+| geography | Individuals (w/weights) |
+| source | [Kenya Open Data Portal](http://fsdkenya.org/dataset/finaccess-household-2015/) |
+
+Contains its own codebook, but most useful to us are:
+ - `a2`: The county
+ - `popwgt_normalized`: The normalized population weight
+ - `b11_7`: B11.Over the last year you had to sell some assets in order to repay a loan (Agree, 1; Disagree, 2)		
+ - `b11_8`: B11.Over the last year you had to borrow another loan in order to repay a loan (Agree, 1; Disagree, 2)
+
+
+## `raw/Socio Economic Data/KIHBS2005/Final Poverty Estimates All.xls`
+
+| Summary   | -          |
+| --------- | ---------- |
+| type      | Excel |
+| sheetname | `Sublocation` looks most relevant |
+| time      | 2005-2006       |
+| geography | Kenya (by county, constituency, ward)      |
+| source | [Kenya Integrated Household Budget Survey](http://www.knbs.or.ke/index.php?option=com_content&view=article&id=144:kenya-integrated-household-budget-survey-2005-2006&catid=104&Itemid=590). |
+
+Note: Looks like this dataset is [due to be updated this year](http://www.knbs.or.ke/index.php?option=com_phocadownload&view=category&id=129:2015-16-kenya-integrated-household-budget-survey-kihbs&Itemid=1214).
+
+Contains:
+ - Poverty incidence by county
+ - Poverty gap
+ - Gini measure (inequality)
+ - Mean Expenditure (up to sublocation)
+
+
+ ## `raw/Socio Economic Data/KIHBS2005/Proportion_of_Households_Engaged_in_Crop_Farming_by_Region_County_Estimates_-_2005_6.csv`
+
+ | Summary   | -          |
+ | --------- | ---------- |
+ | type      | CSV |
+ | time      | 2005 |
+ | geography | By county |
+ | source | [Kenya Open Data](https://www.opendata.go.ke/Agriculture/Proportion-of-Households-Engaged-in-Crop-Farming-b/er9s-gbuj) |
+
+County level estimates of the proportion of households engaged in crop farming.
+
+
+ ## `raw/Socio Economic Data/KIHBS2005/Population_and_Household_Characteristics_County_estimates_2005_6.csv`
+
+ | Summary   | -          |
+ | --------- | ---------- |
+ | type      | CSV |
+ | time      | 2005 |
+ | geography | By county |
+ | source | [Kenya Open Data](https://www.opendata.go.ke/Population/Population-and-Household-Characteristics-County-es/rbf2-cy4u) |
+
+ Ages, genders, household size, marital status
+ 2005-2006 estimates by county
+
+ ## `raw/Socio Economic Data/KenInfo_2012_en.csv`
+
+ | Summary   | -          |
+ | --------- | ---------- |
+ | type      | CSV |
+ | time      | 1975 - 2013 (different frequencies for different metrics)       |
+ | geography | Kenya (varying levels of geographic resolution)      |
+ | source | [KenInfo](http://www.devinfo.org/keninfo/libraries/aspx/home.aspx) |
+
+This contains a number of metrics/indicators at varying geographic resolutions an time scales. Includes things like education, health, poverty.
+
+
+## `Socio Economic data of Kenya, 2011`
+
+| Summary   | -          |
+| --------- | ---------- |
+| type      | CSVs |
+| time      | 1975 - 2013 (different frequencies for different metrics)       |
+| geography | Kenya (varying levels of geographic resolution)      |
+| source | [KenInfo](http://www.devinfo.org/keninfo/libraries/aspx/home.aspx) |
+
+Emailed the maintainers of this to get full dataset:
+ http://kenya.opendataforafrica.org/SEDK2015/socio-economic-data-of-kenya-2011
+
+Potentially, this is the same data as KenInfo
+
+## `raw/Crop Yield/Admin Level 1 - Crops in Tons.csv`
+
+| Summary   | -          |
+| --------- | ---------- |
+| type      | CSVs |
+| time      | 2005 - 2008 |
+| geography | Administrative Level 1 |
+| source | [CountryStat](http://www.countrystat.org/home.aspx?c=KEN&ta=114SPD010&tr=21) |
+
+Only at Admin Level 1, 2005-2008. Crop Yield in Tons.
+
 
 ## `raw/Rainfall Data`
 
-Summary | -  
- --- | ---
-type | TIF
-time | 2012-2015, yearly
-geography | Worldwide
+| Summary   | -                 |
+| --------- | ----------------- |
+| type      | TIF               |
+| time      | 2012-2015, yearly |
+| geography | Worldwide         |
 
 Global rainfall accumulation (Notes say average monthly accumulation) for years 2012-2015. Data is from the NASA TRMM mission. This missions ended and future rainfall collection will [be from TMPA, TMPA-RT, and IMERG](https://pmm.nasa.gov/sites/default/files/document_files/TMPA-to-IMERG_transition.pdf).
 
@@ -1186,34 +1339,34 @@ Files are named `trmm_acc_YYYY.tif`
 
 ## `raw/Soil Data/SOTWIS_Kenya_ver1.0`
 
-Summary | -  
- --- | ---
-type | Shapefiles
-time | N/A
-geography | Kenya
+| Summary   | -          |
+| --------- | ---------- |
+| type      | Shapefiles |
+| time      | N/A        |
+| geography | Kenya      |
 
 Soil properties from the [ISRIC Kenya SOTER database](http://www.isric.org/projects/soter-kenya-kensoter). Version 2.0 [is now available for download](http://www.isric.org/data/soil-and-terrain-database-kenya-ver-20-kensoter) so we may consider updating.
 
 Here are the present soil parameters:
 
- - Organic carbon
- - Total nitrogen
- - Soil reaction (pHH2O)
- - Cation exchange capacity (CECsoil)
- - Cation exchange capacity of clay size fraction (CECclay) ● ‡
- - Base saturation (as % of CECsoil) ‡
- - Effective cation exchange capacity (ECEC) † ‡
- - Aluminum saturation (as % of ECEC) ‡
- - CaCO3 content
- - Gypsum content
- - Exchangeable sodium percentage (ESP) ‡
- - Electrical conductivity of saturated paste (ECe)
- - Bulk density
- - Coarse fragments (volume %)
- - Sand (mass %)
- - Silt (mass %)
- - Clay (mass %)
- - Available water capacity (AWC; from -33 to -1500 kPa; % w/v)
+- Organic carbon
+- Total nitrogen
+- Soil reaction (pHH2O)
+- Cation exchange capacity (CECsoil)
+- Cation exchange capacity of clay size fraction (CECclay) ● ‡
+- Base saturation (as % of CECsoil) ‡
+- Effective cation exchange capacity (ECEC) † ‡
+- Aluminum saturation (as % of ECEC) ‡
+- CaCO3 content
+- Gypsum content
+- Exchangeable sodium percentage (ESP) ‡
+- Electrical conductivity of saturated paste (ECe)
+- Bulk density
+- Coarse fragments (volume %)
+- Sand (mass %)
+- Silt (mass %)
+- Clay (mass %)
+- Available water capacity (AWC; from -33 to -1500 kPa; % w/v)
 
 
 ## `raw/User Data`
@@ -1223,29 +1376,29 @@ Data from FarmDrive about their farmers.
 
 ### `raw/User Data/tbl_farmer.csv`
 
-Summary | -  
- --- | ---
-type | CSV
-time | N/A
-geography | N/A
+| Summary   | -    |
+| --------- | ---- |
+| type      | CSV  |
+| time      | N/A  |
+| geography | N/A  |
 
 Raw database table dump for farmers in the FarmDrive system.
 
- - [date_created](#date_created)
- - [phone_number](#phone_number)
- - [farmer_name](#farmer_name)
- - [id_number](#id_number)
- - [county](#county)
- - [constituency](#constituency)
- - [ward](#ward)
- - [tocode](#tocode)
- - [language_preference](#language_preference)
- - [dob](#dob)
- - [gender](#gender)
- - [marital_status](#marital_status)
- - [dependants_number](#dependants_number)
- - [sub_location](#sub_location)
- - [wards_coded](#wards_coded)
+- [date_created](#date_created)
+- [phone_number](#phone_number)
+- [farmer_name](#farmer_name)
+- [id_number](#id_number)
+- [county](#county)
+- [constituency](#constituency)
+- [ward](#ward)
+- [tocode](#tocode)
+- [language_preference](#language_preference)
+- [dob](#dob)
+- [gender](#gender)
+- [marital_status](#marital_status)
+- [dependants_number](#dependants_number)
+- [sub_location](#sub_location)
+- [wards_coded](#wards_coded)
 
 #### `date_created`
 
@@ -1533,11 +1686,11 @@ Name: wards_coded, dtype: object
 
 ### `raw/User Data/ward_leve_data.rds`
 
- Summary | - 
- --- | ---
-type | RDS
-time | N/A
-geography | N/A
+| Summary   | -    |
+| --------- | ---- |
+| type      | RDS  |
+| time      | N/A  |
+| geography | N/A  |
 
 R object file with dataframe that looks like it contains counts of "registrations" for geographies in Kenya.
 
@@ -1557,11 +1710,11 @@ Head of the file:
 
 ## `raw/Ward Shapefiles`
 
-Summary | -  
---- | ---
-type | Shapefiles
-time | N/A
-geography | Kenya
+| Summary   | -          |
+| --------- | ---------- |
+| type      | Shapefiles |
+| time      | N/A        |
+| geography | Kenya      |
 
 Geographic boundaries for political units in Kenya.
 
