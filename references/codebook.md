@@ -1,5 +1,6 @@
 # Raw files/directories covered in this codebook
 
+- [`raw/Counties Shapefile`](#rawcounties-shapefile)
 - [`raw/Crop Prices`](#rawcrop-prices)
 - [`raw/Crop Yield/Admin Level 1 - Crops in Tons.csv`](#rawcrop-yieldadmin-level-1-crops-in-tonscsv)
 - [`processed/all_crop_prices.csv`](#processedall_crop_pricescsv)
@@ -19,6 +20,18 @@
 - [`raw/User Data`](#rawuser-data)
 - [`raw/User Data/ward_leve_data.rds`](#rawuser-dataward_leve_datards)
 - [`raw/Ward Shapefiles`](#rawward-shapefiles)
+
+
+## `raw/Counties Shapefile`
+
+| Summary   | -                             |
+| --------- | ----------------------------- |
+| type      | Shapefile                  |
+| time      | N/A |
+| geography | Counties                    |
+| source    | [ArcGIS user upload](http://www.arcgis.com/home/item.html?id=5f83ca29e5b849b8b05bc0b281ae27bc) |
+
+The 47 counties in Kenya.
 
 
 ## `raw/Crop Prices`
