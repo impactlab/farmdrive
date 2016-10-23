@@ -2,20 +2,20 @@
 
 - [`raw/Counties Shapefile`](#rawcounties-shapefile)
 - [`raw/Crop Prices`](#rawcrop-prices)
-- [`raw/Crop Yield/Admin Level 1 - Crops in Tons.csv`](#rawcrop-yieldadmin-level-1-crops-in-tonscsv)
+- [`raw/Crop Yield/Admin Level 1 - Crops in Tons.csv`](#rawcrop-yieldadmin-level-1---crops-in-tonscsv)
 - [`processed/all_crop_prices.csv`](#processedall_crop_pricescsv)
 - [`raw/Elevation Data`](#rawelevation-data)
 - [`raw/FAO-AGROECOLOGICAL DATA`](#rawfao-agroecological-data)
 - [`raw/Rainfall Data`](#rawrainfall-data)
-- [`raw/Socio Economic Data/Census2009`](#)
-- [`raw/Socio Economic Data/County Government Expenditure 2013_2014.csv`](#)
-- [`raw/Socio Economic Data/DHS/`](#)
-- [`raw/Socio Economic Data/FinAccess2016`](#)
-- [`raw/Socio Economic Data/KIHBS2005/Final Poverty Estimates All.xls`](#)
-- [`raw/Socio Economic Data/KIHBS2005/Proportion_of_Households_Engaged_in_Crop_Farming_by_Region_County_Estimates_-_2005_6.csv`](#)
+- [`raw/Socio Economic Data/Census2009`](#rawsocio-economic-datacensus2009)
+- [`raw/Socio Economic Data/County Government Expenditure 2013_2014.csv`](#rawsocio-economic-datacounty-government-expenditure-2013_2014csv)
+- [`raw/Socio Economic Data/DHS/`](#rawsocio-economic-datadhs)
+- [`raw/Socio Economic Data/FinAccess2016`](#rawsocio-economic-datafinaccess2016)
+- [`raw/Socio Economic Data/KIHBS2005/Final Poverty Estimates All.xls`](#rawsocio-economic-datakihbs2005final-poverty-estimates-allxls)
+- [`raw/Socio Economic Data/KIHBS2005/Proportion_of_Households_Engaged_in_Crop_Farming_by_Region_County_Estimates_-_2005_6.csv`](#rawsocio-economic-datakihbs2005proportion_of_households_engaged_in_crop_farming_by_region_county_estimates_-_2005_6csv)
 - [`raw/Socio Economic Data/KIHBS2005/Population_and_Household_Characteristics_County_estimates_2005_6.csv`](#)
 - [`raw/Socio Economic Data/KenInfo_2012_en.csv`](#)
-- [`raw/Socio Economic Data/Socio Economic data of Kenya, 2011`](#)
+- [`raw/Socio Economic Data/Socio Economic data of Kenya, 2011`](#socio-economic-data-of-kenya-2011)
 - [`raw/Soil Data/SOTWIS_Kenya_ver1.0`](#rawsoil-datasotwis_kenya_ver10)
 - [`raw/User Data`](#rawuser-data)
 - [`raw/User Data/ward_leve_data.rds`](#rawuser-dataward_leve_datards)
@@ -1289,26 +1289,26 @@ Contains:
 County level estimates of the proportion of households engaged in crop farming.
 
 
- ## `raw/Socio Economic Data/KIHBS2005/Population_and_Household_Characteristics_County_estimates_2005_6.csv`
+## `raw/Socio Economic Data/KIHBS2005/Population_and_Household_Characteristics_County_estimates_2005_6.csv`
 
- | Summary   | -          |
- | --------- | ---------- |
- | type      | CSV |
- | time      | 2005 |
- | geography | By county |
- | source | [Kenya Open Data](https://www.opendata.go.ke/Population/Population-and-Household-Characteristics-County-es/rbf2-cy4u) |
+| Summary   | -          |
+| --------- | ---------- |
+| type      | CSV |
+| time      | 2005 |
+| geography | By county |
+| source | [Kenya Open Data](https://www.opendata.go.ke/Population/Population-and-Household-Characteristics-County-es/rbf2-cy4u) |
 
  Ages, genders, household size, marital status
  2005-2006 estimates by county
 
- ## `raw/Socio Economic Data/KenInfo_2012_en.csv`
+## `raw/Socio Economic Data/KenInfo_2012_en.csv`
 
- | Summary   | -          |
- | --------- | ---------- |
- | type      | CSV |
- | time      | 1975 - 2013 (different frequencies for different metrics)       |
- | geography | Kenya (varying levels of geographic resolution)      |
- | source | [KenInfo](http://www.devinfo.org/keninfo/libraries/aspx/home.aspx) |
+| Summary   | -          |
+| --------- | ---------- |
+| type      | CSV |
+| time      | 1975 - 2013 (different frequencies for different metrics)       |
+| geography | Kenya (varying levels of geographic resolution)      |
+| source | [KenInfo](http://www.devinfo.org/keninfo/libraries/aspx/home.aspx) |
 
 This contains a number of metrics/indicators at varying geographic resolutions an time scales. Includes things like education, health, poverty.
 
