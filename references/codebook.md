@@ -1251,8 +1251,11 @@ Note: These data formats are painful for modern tools. The most effective route 
 Contains its own codebook, but most useful to us are:
  - `a2`: The county
  - `popwgt_normalized`: The normalized population weight
+ - `e4_8`: Never used loan/credit product (1 Yes, 2 No)
  - `b11_7`: B11.Over the last year you had to sell some assets in order to repay a loan (Agree, 1; Disagree, 2)		
  - `b11_8`: B11.Over the last year you had to borrow another loan in order to repay a loan (Agree, 1; Disagree, 2)
+ - `j8_*`:  J8.How difficult did you find it to repay  Personal loan/business loan from a b [formal loans?]
+ - `j14_*`: J14.How difficult did you find it to repay  Personal loan/business loan from a b [informal loans?]
 
 
 ## `raw/Socio Economic Data/KIHBS2005/Final Poverty Estimates All.xls`
