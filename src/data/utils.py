@@ -10,11 +10,15 @@ def date_from_filename(f):
     """ Takes a filename that roughly has a format like:
         DD-MM-YYYY.xls or DD.MM.YYYY.xls and extracts the date using a regex
     """
+    warning_str = "WARNING: Date extraction from filename failed on '{}'." +
+                " If there is not a full date including day, " +
+                "this can be ignored."
+
     REGEX = re.compile(r"([0-9]{1,2})(\(1\))?(\s)?([-\.])(\s)?([0-9]{1,2})(\s)?([-\.])?(\s)?([0-9]{2,4})")
     m = REGEX.search(f)
 
     if m is None:
-        print("Failed on '{}'".format(f))
+        print(warning_str.format(f))
         return np.nan
 
     day = m.groups()[0]
@@ -23,7 +27,7 @@ def date_from_filename(f):
 
     # special case not having a separator between mo and year when both are 2 digits:
     if len(month) == 2 and len(year) == 2 and m.groups()[7] is None:
-        print("Date extraction from filename failed on '{}'".format(f))
+        print(warning_str.format(f))
         return np.nan
 
     if len(day) == 1:
