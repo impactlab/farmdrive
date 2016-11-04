@@ -22,7 +22,8 @@ update_env:
 ## Create an empty postgis database and initialize it
 create_db:
 	createdb farmdrive;
-	psql -f src/data/create_postgis_db.sql farmdrive
+	psql -f src/data/create_postgis_db.sql farmdrive;
+	psql -f src/data/postgis_addons.sql farmdrive;
 
 ## Load data into the postgis database and create any other processed data files
 data:
