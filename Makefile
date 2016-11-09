@@ -29,6 +29,11 @@ create_db:
 data:
 	python src/data/make_dataset.py
 
+geo_features:
+	runipy notebooks/1.5-pjb-county-geo-features.ipynb
+
+features: geo_features
+
 ## Remove compiled python files.
 clean:
 	find . -name "*.pyc" -exec rm {} \;
