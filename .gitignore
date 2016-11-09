@@ -93,3 +93,7 @@ ENV/
 
 # exclude the data from source control
 /data/
+
+# R
+.Rhistory
+.Rdata
