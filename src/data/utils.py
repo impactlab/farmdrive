@@ -1,6 +1,7 @@
 import os
 import re
 
+from fuzzywuzzy import process
 import numpy as np
 import pandas as pd
 import xlrd
@@ -8,10 +9,12 @@ import xlrd
 
 def date_from_filename(f):
     """ Takes a filename that roughly has a format like:
-        DD-MM-YYYY.xls or DD.MM.YYYY.xls and extracts the date using a regex
+        DD-MM-YYYY.xls or DD.MM.YYYY.xls and extracts the date using a regex.
+
+        Returns nans and prints warnings if date not found in filename.
     """
-    warning_str = "WARNING: Date extraction from filename failed on '{}'." +
-                " If there is not a full date including day, " +
+    warning_str = "WARNING: Date extraction from filename failed on '{}'." + \
+                " If there is not a full date including day, " + \
                 "this can be ignored."
 
     REGEX = re.compile(r"([0-9]{1,2})(\(1\))?(\s)?([-\.])(\s)?([0-9]{1,2})(\s)?([-\.])?(\s)?([0-9]{2,4})")
@@ -25,7 +28,7 @@ def date_from_filename(f):
     month = m.groups()[5]
     year = m.groups()[9]
 
-    # special case not having a separator between mo and year when both are 2 digits:
+    # special case no separator between mo and year when both are 2 digits:
     if len(month) == 2 and len(year) == 2 and m.groups()[7] is None:
         print(warning_str.format(f))
         return np.nan
@@ -60,3 +63,10 @@ def find_header_row(path):
         raise Exception("Failed to find header row for {}".format(path))
 
     return header_row
+
+
+def resolve_county_names(to_resolve, expected):
+    """ Uses fuzzy string mathching to get the canonical county name from
+        `expected` for each of the the strings in `to_resolve`.
+    """
+    return [process.extractOne(r, expected)[0] for r in to_resolve]
