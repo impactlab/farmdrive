@@ -29,10 +29,16 @@ create_db:
 data:
 	python src/data/make_dataset.py
 
+## Create county-level geographic features
 geo_features:
 	runipy notebooks/1.5-pjb-county-geo-features.ipynb
 
-features: geo_features
+## Create county-level demographic features
+demo_features:
+	runipy notebooks/1.6-pjb-county-demo-features.ipynb
+
+## Create all county-level features
+features: demo_features geo_features 
 
 ## Remove compiled python files.
 clean:
