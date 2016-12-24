@@ -1,254 +1,288 @@
-## VENDORED download.py from the planet documentation here:
-## https://www.planet.com/docs/guides/quickstart-ndvi/
-
-from __future__ import print_function
-
-import argparse
-import os
-import requests
+import collections
+from itertools import compress
 import json
+import os
+from subprocess import check_output, CalledProcessError, STDOUT
+import time
+import traceback
 
-from retrying import retry
-
+import click
 import dotenv
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from tqdm import tqdm
 
-ASSET_URL = 'https://api.planet.com/data/v1/item-types/{}/items/{}/assets/'
-SEARCH_URL = 'https://api.planet.com/data/v1/quick-search'
-
-# set up auth
-SESSION = requests.Session()
+import download_planet_lib as planet_lib
 
 # get variables from .env file
 dotenv.load_dotenv(dotenv.find_dotenv())
 
-SESSION.auth = (os.environ.get('PL_API_KEY'), '')
+# fallback to localhost database
+engine = create_engine(os.environ.get('DATABASE_URL',
+                                      'postgresql://localhost/farmdrive'))
+session = sessionmaker(bind=engine)()
+
+PLANET_DATA_ROOT = os.path.abspath(os.path.join(__file__,
+                                                os.pardir,
+                                                os.pardir,
+                                                os.pardir,
+                                                'data',
+                                                'raw',
+                                                'planet'))
 
 
-class RateLimitException(Exception):
-    pass
+def query_for_aois(county_name, crop_table, crop_name):
+    """ Gets the areas of interest for a particular
+        county_name
+        crop_table
+        crop_name
+    """
+
+    # individual geojson polygons for each raster pixel
+    query = """
+    SELECT
+    json_build_object(
+        'type', 'Feature',
+        'id', (poly_pixels.x || '_' || poly_pixels.y),
+        'geometry', ST_AsGeoJSON(1, poly_pixels.geom, 15, 2) :: JSON,
+        'properties', json_build_object('{crop_name}_yield', poly_pixels.val)
+    )
+    FROM
+      (SELECT (ST_PixelAsPolygons(ST_Union(ST_Clip("{crop_table}".rast, clipped_geom.geom)))).*
+        FROM
+          "{crop_table}",
+          (SELECT county.geom FROM county WHERE county.county = '{county_name}') AS clipped_geom
+        WHERE ST_Intersects("{crop_table}".rast, clipped_geom.geom)
+      ) AS poly_pixels;
+    """
+
+    query = query.format(crop_name=crop_name,
+                         crop_table=crop_table,
+                         county_name=county_name)
+
+    # Execute the query in the session
+    result = session.execute(query)
+
+    # for now, just get the first result. ultimately, we'll need them all.
+    aoi_raster = result.fetchall()
+    return aoi_raster
 
 
-def handle_page(page):
-    return [item['id'] for item in page['features']]
+def write_and_reproject_per_pixel_geojson(aoi_geojson, county_pixel_dir):
+    """ Operates on a single geojson AOI to write out the current
+        projection and the projection we need to work with planet.
+    """
+    geojson_input = os.path.join(county_pixel_dir, 'geojson_epsg4326.geojson')
+    geojson_output = os.path.join(county_pixel_dir, 'geojson_epsg32637.geojson')
 
+    with open(geojson_input, 'w') as gj_file:
+        json.dump(aoi_geojson, gj_file)
 
-def retry_if_rate_limit_error(exception):
-    """Return True if we should retry (in this case when it's a rate_limit
-    error), False otherwise"""
-    return isinstance(exception, RateLimitException)
-
-
-def check_status(result, msg=None):
-    if result.status_code == 429:
-        print('Rate limit error - retrying')
-        raise RateLimitException('rate limit error')
-    else:
-        if msg:
-            print(msg)
-        return True
-
-
-@retry(
-    wait_exponential_multiplier=1000,
-    wait_exponential_max=10000,
-    retry_on_exception=retry_if_rate_limit_error,
-    stop_max_attempt_number=5)
-def run_search(search_request):
-    print('Running query')
-
-    result = SESSION.post(SEARCH_URL, json=search_request)
-
-    check_status(result)
-
-    page = result.json()
-    final_list = handle_page(page)
-
-    while page['_links'].get('_next') is not None:
-        page_url = page['_links'].get('_next')
-        page = SESSION.get(page_url).json()
-        ids = handle_page(page)
-        final_list += ids
-
-    return [fid for fid in final_list]
-
-
-@retry(
-    wait_exponential_multiplier=1000,
-    wait_exponential_max=10000,
-    retry_on_exception=retry_if_rate_limit_error,
-    stop_max_attempt_number=5)
-def activate(item_id, item_type, asset_type):
-    item_id = item_id.strip('"')
-
-    result = SESSION.get(ASSET_URL.format(item_type, item_id))
-
-    check_status(result)
-
-    print(item_id, result.json())
-    status = result.json()[asset_type]['status']
-    if status == 'active':
-        print('Item already active: {}'.format(item_id))
-        return False
-    else:
-        item_activation_url = result.json()[asset_type]['_links']['activate']
-
-        print('Activating {} {} for {}'.format(item_type, asset_type, item_id))
-        result = SESSION.post(item_activation_url)
-
-        return check_status(result, 'Activation process started successfully')
-
-
-@retry(
-    wait_exponential_multiplier=1000,
-    wait_exponential_max=10000,
-    retry_on_exception=retry_if_rate_limit_error,
-    stop_max_attempt_number=5)
-def check_activation(item_id, item_type, asset_type):
-    result = SESSION.get(ASSET_URL.format(item_type, item_id))
-
-    check_status(result)
-
-    status = result.json()[asset_type]['status']
-    print('{}: {}'.format(item_id, status))
-
-    if status == 'active':
-        return True
-    else:
-        print('Item not yet active: {}'.format(item_id))
-        return False
-
-
-@retry(
-    wait_exponential_multiplier=1000,
-    wait_exponential_max=10000,
-    retry_on_exception=retry_if_rate_limit_error,
-    stop_max_attempt_number=5)
-def download(url, path, item_id, asset_type, overwrite):
-    fname = '{}_{}.tif'.format(item_id, asset_type)
-    local_path = os.path.join(path, fname)
-
-    if not overwrite and os.path.exists(local_path):
-        print('File {} exists - skipping ...'.format(local_path))
-    else:
-        print('Downloading file to {}'.format(local_path))
-        # memory-efficient download, per
-        # stackoverflow.com/questions/16694907/how-to-download-large-file-in-python-with-requests-py
-        result = requests.get(url)
-
-        if check_status(result):
-            f = open(local_path, 'wb')
-            for chunk in result.iter_content(chunk_size=512 * 1024):
-                # filter out keep-alive new chunks
-                if chunk:
-                    f.write(chunk)
-            f.close()
-
-    return True
-
-
-def process_activation(func, id_list, item_type, asset_type):
-    results = []
-
-    for item_id in id_list:
-        result = func(item_id, item_type, asset_type)
-        results.append(result)
-
-    return results
-
-
-def process_download(path, id_list, item_type, asset_type, overwrite):
-    results = []
-
-    # ensure directory structure exists
     try:
-        os.makedirs(path)
-    except OSError:
-        pass
+        check_output(['ogr2ogr',
+                      '-f',
+                      'GeoJSON',
+                      geojson_output,
+                      '-t_srs',
+                      'EPSG:32637',
+                      geojson_input], stderr=STDOUT)
 
-    # now start downloading each file
-    for item_id in id_list:
-        result = SESSION.get(ASSET_URL.format(item_type, item_id))
+    except CalledProcessError as e:
+        print(e.output)
+        raise
 
-        if result.json()[asset_type]['status'] == 'active':
-            download_url = result.json()[asset_type]['location']
-            result = download(download_url, path, item_id, asset_type, overwrite)
+
+def build_planet_query(geojson_aoi,
+                       min_date="2016-07-31T00:00:00.000Z",
+                       max_date="2016-10-31T00:00:00.000Z",
+                       cloud_cover=0.05):
+    """ Creates a query for the planet v1 api with a date range,
+        area of interest, max cloud cover %
+    """
+    if 'geometry' in geojson_aoi:
+        geojson_aoi = geojson_aoi['geometry']
+
+    # filter for items the overlap with our chosen geometry
+    geometry_filter = {
+      "type": "GeometryFilter",
+      "field_name": "geometry",
+      "config": geojson_aoi
+    }
+
+    # MAIZE harvest season in Kenya is Aug - Oct
+    date_range_filter = {
+      "type": "DateRangeFilter",
+      "field_name": "acquired",
+      "config": {
+        "gte": min_date,
+        "lte": max_date
+      }
+    }
+
+    # filter any images which are more than 10% clouds
+    cloud_cover_filter = {
+      "type": "RangeFilter",
+      "field_name": "cloud_cover",
+      "config": {
+        "lte": cloud_cover
+      }
+    }
+
+    # create a filter that combines our geo and date filters
+    query_filter = {
+      "type": "AndFilter",
+      "config": [geometry_filter, date_range_filter, cloud_cover_filter]
+    }
+
+    return query_filter
+
+
+def has_local_scene(scene_id, asset_type, asset_dir):
+    scene_path = os.path.join(asset_dir, '{}_{}.tif'.format(scene_id,
+                                                            asset_type))
+    return os.path.exists(scene_path)
+
+
+def download_tiles_from_aoi(planet_query,
+                            data_dir,
+                            asset_type='analytic',
+                            search_type='PSOrthoTile'):
+    """ Activates the scenes in the planet query and downloads
+        them to the data_dir if they are not there already.
+    """
+
+    # get the planet scenes IDs for our query
+    scene_ids = planet_lib.run_search({'item_types': [search_type],
+                                       'filter': planet_query})
+
+    # check for scenes that we _don't_ already have
+    not_local_scene_ids = [sid for sid in scene_ids if not \
+                           has_local_scene(sid, asset_type, data_dir)]
+
+    # mark the scenes we want for activation
+    planet_lib.process_activation(planet_lib.activate,
+                                  not_local_scene_ids,
+                                  search_type,
+                                  asset_type)
+
+    # wait for assets to activate; can take 8-10 mins, we'll wait up to 30 min
+    SLEEP_PERIODS = 120
+    for i in tqdm(range(SLEEP_PERIODS)):
+        activated = planet_lib.process_activation(planet_lib.check_activation,
+                                                  not_local_scene_ids,
+                                                  search_type,
+                                                  asset_type)
+
+        if all(activated):
+            print('All scenes activated!')
+            break
         else:
-            result = False
+            time.sleep(15)
 
-        results.append(result)
+    if not all(activated):
+        fail_path = os.path.join(data_dir, 'failed_scenes.log')
+        with open(fail_path, 'w') as fail_log:
+            failed_ids = list(compress(not_local_scene_ids, activated))
+            fail_log.write(failed_ids)
+        print("Wrote scenes that failed to activate to {}".format(fail_path))
 
-    return results
+    downloaded = planet_lib.process_download(data_dir,
+                                             not_local_scene_ids,
+                                             search_type,
+                                             asset_type,
+                                             False)
+
+    if not all(downloaded):
+        fail_path = os.path.join(data_dir, 'failed_downloads.log')
+        with open(fail_path, 'w') as fail_log:
+            failed_ids = list(compress(not_local_scene_ids, downloaded))
+            fail_log.write(failed_ids)
+        print("Wrote scenes that failed to download to {}".format(fail_path))
+
+
+@click.command()
+@click.argument('county_name')
+@click.argument('crop_table')
+@click.argument('crop_name')
+@click.option('--aoi_selector', default=None, type=int, help='Index of aoi to use if not all.')
+@click.option('--min_date', default='', help='Start date in ISO8601')
+@click.option('--max_date', default='', help='End date in ISO8601')
+@click.option('--cloud_cover', default='', help='Percent cloud cover allowed')
+@click.option('--asset_type', default='analytic', help="'analytic' or 'visual' assets from the Planet API")
+def download_county_crop_tiles(county_name,
+                               crop_table,
+                               crop_name,
+                               aoi_selector,
+                               min_date,
+                               max_date,
+                               cloud_cover,
+                               asset_type):
+    """ This script downloads planet labs data for the crop_table in county_name
+        and saves it as the crop_name.
+
+        Example: python download_planet.py Nakuru 'maiz_p--ssa' maize
+    """
+    # get the areas of interest from the postgres database
+    geojson_aois = query_for_aois(county_name, crop_table, crop_name)
+
+    if aoi_selector:
+        geojson_aois = geojson_aois[aoi_selector]
+
+    if not isinstance(geojson_aois, collections.Iterable):
+        geojson_aois = [geojson_aois]
+
+    # download images for every area of interest
+    failed_aois = []
+    for aoi in geojson_aois:
+        try:
+            # create directories if we need to
+            county_data = os.path.join(PLANET_DATA_ROOT,
+                                       county_name)
+
+            county_pixel_dir = os.path.join(county_data,
+                                            aoi['id'])
+
+            asset_dir = os.path.join(county_data,
+                                     'assets')
+
+            os.makedirs(county_pixel_dir, exist_ok=True)
+            os.makedirs(asset_dir, exist_ok=True)
+
+            # get the geojson and write in both projections
+            write_and_reproject_per_pixel_geojson(aoi, county_pixel_dir)
+
+            # override defaults if they are passed
+            extra_query_kwargs = {}
+            if min_date:
+                extra_query_args['min_date'] = min_date
+            if max_date:
+                extra_query_args['max_date'] = max_date
+            if cloud_cover:
+                extra_query_args['cloud_cover'] = cloud_cover
+
+            # get the representation of the query
+            planet_query = build_planet_query(aoi, **extra_query_kwargs)
+
+            # activate and download the tiles
+            download_tiles_from_aoi(planet_query,
+                                    asset_dir,
+                                    asset_type=asset_type,
+                                    search_type='PSOrthoTile')
+        except Exception as e:
+            print('>>>>>>>>>>>>>> FAILURE TO DOWNLOAD AOI >>>>>>>>>>>>>')
+            print(e)
+            print(traceback.print_exc())
+            failed_aois.append(aoi)
+
+    print('{} of {} aois did not download correctly.'.format(len(failed_aois),
+                                                             len(geojson_aois)))
+
+    if failed_aois:
+        fail_path = os.path.join(county_data, 'failed_aois.json')
+        with open(fail_path, 'w') as fail_log:
+            json.dump(failed_aois, fail_log)
+        print("Wrote scenes that failed to activate to {}".format(fail_path))
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--idlist', help='Location of file containing image ids (one per line) to process')
-    parser.add_argument('--query', help='Path to json file containing query')
-    parser.add_argument('--search', help='Search for images', action='store_true')
-    parser.add_argument('--activate', help='Activate assets', action='store_true')
-    parser.add_argument('--check', help='Check activation status', action='store_true')
-    parser.add_argument('--download', help='Path where downloaded files should be stored')
-    parser.add_argument('--overwrite', help='Overwrite existing downloads', action='store_true')
-    parser.add_argument('--key', help='Set API key')
-
-    parser.add_argument('item', help='Item type (e.g. REOrthoTile or PSOrthoTile)')
-    parser.add_argument('asset', help='Asset type (e.g. visual, analytic, analytic_xml)')
-
-    args = parser.parse_args()
-
-    if args.key:
-        SESSION.auth = (args.key, '')
-
-    if not (args.idlist or args.query):
-        parser.error('Error: please supply an --idlist or --query argument.')
-
-    if args.idlist:
-        with open(args.idlist) as f:
-            id_list = [i.strip() for i in f.readlines()]
-
-    if args.query:
-        # load query json file
-        with open(args.query, 'r') as fp:
-            query = json.load(fp)
-
-        # Search API request object
-        search_payload = {'item_types': [args.item], 'filter': query}
-
-        id_list = run_search(search_payload)
-
-    if args.search:
-        print('%d available images' % len(id_list))
-
-    elif args.activate:
-        results = process_activation(activate, id_list, args.item, args.asset)
-        msg = 'Requested activation for {} of {} items'
-        print(msg.format(results.count(True), len(results)))
-
-    # check activation status of all data returned by search query
-    elif args.check:
-        results = process_activation(check_activation, id_list, args.item,
-                                     args.asset)
-
-        msg = '{} of {} items are active'
-        print(msg.format(results.count(True), len(results)))
-
-    # download all data returned by search query
-    elif args.download:
-        results = process_download(args.download, id_list, args.item,
-                                   args.asset, args.overwrite)
-        msg = 'Successfully downloaded {} of {} files to {}. {} were not activated yet.'
-        print(msg.format(results.count(True), len(results), args.download, results.count(False)))
-
-    else:
-        parser.error('Error: no action supplied. Please check help (--help) or revise command.')
-
-
-'''Sample commands, for testing.
-python download.py --query redding.json --search PSScene3Band visual
-python download.py --query redding.json --check PSScene3Band visual
-python download.py --query redding.json --activate PSScene3Band visual
-python download.py --query redding.json --download /tmp PSScene3Band visual
-python download.py --idlist ids_small.txt --check PSScene3Band visual
-python download.py --idlist ids_small.txt --activate PSScene3Band visual
-python download.py --idlist ids_small.txt --download /tmp PSScene3Band visual
-'''
+    download_county_crop_tiles()
