@@ -72,11 +72,11 @@ lint:
 
 ## Push local data folder to S3 bucket for storage + sharing
 sync_data_to_s3:
-	aws s3 sync data/ s3://$(BUCKET)/data/ --profile dd
+	aws s3 sync data/ s3://$(BUCKET)/data/
 
 ## Pull whatever is on S3 down to local storage
 sync_data_from_s3:
-	aws s3 sync s3://$(BUCKET)/data/ data/ --profile dd
+	aws s3 sync s3://$(BUCKET)/data/ data/
 
 ## Execute the test suite.
 test:
