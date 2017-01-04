@@ -55,6 +55,9 @@ def load_geo_info(pattern, sql_generating_cmd):
     for globbed_file in glob(pattern, recursive=True):
         if os.path.basename(globbed_file) in BADFILES:
             logger.warn("Skipping known bad files: '{}'".format(globbed_file))
+        elif '/planet/' in globbed_file:
+            # we skip planet images when importing into PostGIS
+            continue
         else:
             psql_path = os.path.splitext(globbed_file)[0] + os.path.extsep + 'sql'
 
