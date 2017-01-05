@@ -129,7 +129,7 @@ def build_planet_query(geojson_aoi,
       "type": "RangeFilter",
       "field_name": "cloud_cover",
       "config": {
-        "lte": cloud_cover
+        "lte": float(cloud_cover)
       }
     }
 
@@ -291,7 +291,7 @@ def merge_scenes(scene_ids, asset_dir, county_pixel_dir, asset_type):
 @click.option('--aoi_selector', default=None, type=str, help='Index of aoi to use if we want just a few; accepts integers and ranges (e.g, 1:10).')
 @click.option('--min_date', default='', help='Start date in ISO8601')
 @click.option('--max_date', default='', help='End date in ISO8601')
-@click.option('--cloud_cover', default='', help='Percent cloud cover allowed')
+@click.option('--cloud_cover', default='', help='Percent cloud cover allowed 0-1.')
 @click.option('--asset_type', default='analytic', help="'analytic' or 'visual' assets from the Planet API")
 @click.option('--resize', is_flag=True, help="Create a resized image after it is downloaded.")
 def download_county_crop_tiles(county_name,
@@ -347,11 +347,11 @@ def download_county_crop_tiles(county_name,
             # override defaults if they are passed
             extra_query_kwargs = {}
             if min_date:
-                extra_query_args['min_date'] = min_date
+                extra_query_kwargs['min_date'] = min_date
             if max_date:
-                extra_query_args['max_date'] = max_date
+                extra_query_kwargs['max_date'] = max_date
             if cloud_cover:
-                extra_query_args['cloud_cover'] = cloud_cover
+                extra_query_kwargs['cloud_cover'] = cloud_cover
 
             # get the representation of the query
             planet_query = build_planet_query(aoi, **extra_query_kwargs)
@@ -389,5 +389,5 @@ def download_county_crop_tiles(county_name,
 
 if __name__ == '__main__':
     import logging
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.WARNING)
     download_county_crop_tiles()
