@@ -58,6 +58,9 @@ def load_geo_info(pattern, sql_generating_cmd):
         elif '/planet/' in globbed_file:
             # we skip planet images when importing into PostGIS
             continue
+        elif os.path.isdir(globbed_file):
+            # skip dirs that match the glob
+            continue
         else:
             psql_path = os.path.splitext(globbed_file)[0] + os.path.extsep + 'sql'
 
