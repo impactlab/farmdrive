@@ -18,6 +18,7 @@ from sqlalchemy.orm import sessionmaker
 from tqdm import tqdm
 
 import download_planet_lib as planet_lib
+from image_processing import resize_for_inceptionv3
 
 # get variables from .env file
 dotenv.load_dotenv(dotenv.find_dotenv())
@@ -216,7 +217,7 @@ def merge_scenes(scene_ids, asset_dir, county_pixel_dir, asset_type):
     pixel_id = os.path.split(county_pixel_dir)[1]
     print("PID: ", pixel_id)
     output_tiff = os.path.join(county_pixel_dir,
-                               pixel_id + '.tif')
+                               pixel_id + '_{}.tif'.format(asset_type))
 
     try:
         check_output(['gdalbuildvrt', '-overwrite', vrt_path] + paths,
@@ -243,53 +244,56 @@ def merge_scenes(scene_ids, asset_dir, county_pixel_dir, asset_type):
         print(e.output)
         raise
 
+    return output_tiff
 
 
 
-def merge_scenes_rasterio(scene_ids, asset_dir, county_pixel_dir, asset_type):
-    paths = [glob(os.path.join(asset_dir, '{}_{}.tif')
-                         .format(sid, asset_type))[0] for sid in scene_ids]
-
-    planet_crs = {'proj': 'utm',
-                  'zone': 37,
-                  'ellps': 'WGS84',
-                  'datum': 'WGS84',
-                  'units': 'm',
-                  'no_defs': True}
-
-    srcs = [rasterio.open(p, crs=planet_crs) for p in paths]
-
-    geojson_proj_file = os.path.join(county_pixel_dir,
-                                     'geojson_epsg32637.geojson')
-    with open(geojson_proj_file) as gj_file:
-        reprojgeoj = json.load(gj_file)
-
-    out_image, out_transform = merge(srcs, bounds=features.bounds(reprojgeoj))
-
-    # save the resulting raster
-    out_meta = srcs[0].meta.copy()
-    out_meta.update({"driver": "GTiff",
-                     "height": out_image.shape[1],
-                     "width": out_image.shape[2],
-                     "transform": out_transform})
-
-    pixel_id = os.path.dirname(county_pixel_dir)
-    raster_merged_path = os.path.join(county_pixel_dir,
-                                      pixel_id + '.tif')
-
-    with rasterio.open(raster_merged_path, "w", **out_meta) as dest:
-        dest.write(out_image)
+#
+# def merge_scenes_rasterio(scene_ids, asset_dir, county_pixel_dir, asset_type):
+#     paths = [glob(os.path.join(asset_dir, '{}_{}.tif')
+#                          .format(sid, asset_type))[0] for sid in scene_ids]
+#
+#     planet_crs = {'proj': 'utm',
+#                   'zone': 37,
+#                   'ellps': 'WGS84',
+#                   'datum': 'WGS84',
+#                   'units': 'm',
+#                   'no_defs': True}
+#
+#     srcs = [rasterio.open(p, crs=planet_crs) for p in paths]
+#
+#     geojson_proj_file = os.path.join(county_pixel_dir,
+#                                      'geojson_epsg32637.geojson')
+#     with open(geojson_proj_file) as gj_file:
+#         reprojgeoj = json.load(gj_file)
+#
+#     out_image, out_transform = merge(srcs, bounds=features.bounds(reprojgeoj))
+#
+#     # save the resulting raster
+#     out_meta = srcs[0].meta.copy()
+#     out_meta.update({"driver": "GTiff",
+#                      "height": out_image.shape[1],
+#                      "width": out_image.shape[2],
+#                      "transform": out_transform})
+#
+#     pixel_id = os.path.dirname(county_pixel_dir)
+#     raster_merged_path = os.path.join(county_pixel_dir,
+#                                       pixel_id + '.tif')
+#
+#     with rasterio.open(raster_merged_path, "w", **out_meta) as dest:
+#         dest.write(out_image)
 
 
 @click.command()
 @click.argument('county_name')
 @click.argument('crop_table')
 @click.argument('crop_name')
-@click.option('--aoi_selector', default=None, type=str, help='Index of aoi to use if not all.')
+@click.option('--aoi_selector', default=None, type=str, help='Index of aoi to use if we want just a few; accepts integers and ranges (e.g, 1:10).')
 @click.option('--min_date', default='', help='Start date in ISO8601')
 @click.option('--max_date', default='', help='End date in ISO8601')
 @click.option('--cloud_cover', default='', help='Percent cloud cover allowed')
 @click.option('--asset_type', default='analytic', help="'analytic' or 'visual' assets from the Planet API")
+@click.option('--resize', is_flag=True, help="Create a resized image after it is downloaded.")
 def download_county_crop_tiles(county_name,
                                crop_table,
                                crop_name,
@@ -297,7 +301,8 @@ def download_county_crop_tiles(county_name,
                                min_date,
                                max_date,
                                cloud_cover,
-                               asset_type):
+                               asset_type,
+                               resize):
     """ This script downloads planet labs data for the crop_table in county_name
         and saves it as the crop_name.
 
@@ -357,7 +362,13 @@ def download_county_crop_tiles(county_name,
                                                  asset_type=asset_type,
                                                  search_type='PSOrthoTile')
 
-            merge_scenes(scence_ids, asset_dir, county_pixel_dir, asset_type)
+            output_path = merge_scenes(scence_ids,
+                                       asset_dir,
+                                       county_pixel_dir,
+                                       asset_type)
+
+            resize_for_inceptionv3(output_path)
+
 
         except Exception as e:
             print('>>>>>>>>>>>>>> FAILURE TO DOWNLOAD AOI >>>>>>>>>>>>>')

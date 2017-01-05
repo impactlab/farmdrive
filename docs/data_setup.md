@@ -1,12 +1,14 @@
 # Pull latest data from S3
 
------
+If you don't have the raw data, you can download it from s3 (provided you have credentials that can access the S3 bucket). To download the raw data, use the `sync_data_from_s3` command.
 
-    make sync_data_from_s3
+    $ make sync_data_from_s3
 
 # Create Postgres database
  - OSX [`Postgres.app`](http://postgresapp.com/)
- - Ubuntu: `apt-get`
+ - Ubuntu:
+    - Follow [these instructions](http://www.paulshapley.com/2016/04/how-to-install-postgresql-95-and.html)
+    - Run `sudo apt-get install postgis` to install the CLI utilities for postgis
 
 From commandline run:
 
