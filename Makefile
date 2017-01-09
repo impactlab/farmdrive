@@ -29,38 +29,20 @@ create_db:
 data:
 	python src/data/make_dataset.py
 
-## Find planet scenes with query in Makefile; write scenes ids to planet_scene_list.txt
-planet_search:
-	planet search \
-		--aoi_id dJ6L8Yp5wgXpogzy \
-		-s ortho \
-		--where image_statistics_image_quality gte standard \
-		--where acquired gte "2016-07-31T04:00:00.000Z" \
-		--where acquired lte "2016-09-30T04:00:00.000Z" \
-		--where cloud_cover.estimated lte 15 \
-		--where image_statistics.gsd gte 1 \
-		--where image_statistics.gsd lte 30 \
-		--where sat.off_nadir lte 62 \
-		--where published gte "2009-01-01T05:00:00.000Z" | jq '.features[].id' > \
-		data/interim/planet_scene_list.txt
-
-## Download scenes listed in planet_scene_list.txt
-planet_dl:
-	xargs -P 12 planet download -d data/raw/planet/nakuru/ {} < data/interim/planet_scene_list.txt
-
-## Run query in makefile and then download the raw data
-planet: planet_search planet_dl
+## Download visual planet data for Maize + Nakuru and resize for InceptionV3
+download_planet_maize_nakuru_visual:
+	python src/data/download_planet.py Nakuru 'maiz_p--ssa' maize --resize --asset_type visual --cloud_cover 0.1
 
 ## Create county-level geographic features
-geo_features:
+county_geo_features:
 	runipy notebooks/1.5-pjb-county-geo-features.ipynb
 
 ## Create county-level demographic features
-demo_features:
+county_demo_features:
 	runipy notebooks/1.6-pjb-county-demo-features.ipynb
 
 ## Create all county-level features
-features: demo_features geo_features
+county_features: demo_features geo_features
 
 ## Remove compiled python files.
 clean:
