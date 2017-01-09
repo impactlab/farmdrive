@@ -29,7 +29,12 @@ class RateLimitException(Exception):
 
 
 def handle_page(page):
-    return [item['id'] for item in page['features']]
+    scenes = [{'id': item['id'],
+               'updated': item['properties']['updated'],
+               'cloud_cover': item['properties']['cloud_cover']}
+              for item in page['features']]
+
+    return scenes
 
 
 def retry_if_rate_limit_error(exception):
@@ -72,7 +77,7 @@ def run_search(search_request):
         ids = handle_page(page)
         final_list += ids
 
-    return [fid for fid in final_list]
+    return final_list
 
 
 @retry(

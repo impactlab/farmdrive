@@ -4,6 +4,7 @@ from itertools import compress
 import json
 import os
 from subprocess import check_output, CalledProcessError, STDOUT
+import sys
 import time
 import traceback
 
@@ -23,9 +24,11 @@ from image_processing import resize_for_inceptionv3
 # get variables from .env file
 dotenv.load_dotenv(dotenv.find_dotenv())
 
-# fallback to localhost database
+# host is empty string (for unix socket) on linux; else, localhost
+# this fallback can be overridden with the .env file
+host = '' if 'linux' in sys.platform else 'localhost'
 engine = create_engine(os.environ.get('DATABASE_URL',
-                                      'postgresql://localhost/farmdrive'))
+                                      'postgresql://{}/farmdrive'.format(host)))
 session = sessionmaker(bind=engine)()
 
 PLANET_DATA_ROOT = os.path.abspath(os.path.join(__file__,
@@ -43,7 +46,6 @@ def query_for_aois(county_name, crop_table, crop_name):
         crop_table
         crop_name
     """
-
     # individual geojson polygons for each raster pixel
     query = """
     SELECT
@@ -61,7 +63,6 @@ def query_for_aois(county_name, crop_table, crop_name):
         WHERE ST_Intersects("{crop_table}".rast, clipped_geom.geom)
       ) AS poly_pixels;
     """
-
     query = query.format(crop_name=crop_name,
                          crop_table=crop_table,
                          county_name=county_name)
@@ -157,8 +158,17 @@ def download_tiles_from_aoi(planet_query,
     """
 
     # get the planet scenes IDs for our query
-    scene_ids = planet_lib.run_search({'item_types': [search_type],
-                                       'filter': planet_query})
+    scenes = planet_lib.run_search({'item_types': [search_type],
+                                    'filter': planet_query})
+
+    # gdal uses the order of filenames for merging; by sorting
+    # we prefer the most recent image with the least cloud_cover in
+    # the final merged image.
+    scenes = sorted(scenes,
+                    key=lambda x: (x['cloud_cover'], x['updated']),
+                    reverse=True)
+
+    scene_ids = [s['id'] for s in scenes]
 
     # check for scenes that we _don't_ already have
     not_local_scene_ids = [sid for sid in scene_ids if not \
@@ -220,68 +230,22 @@ def merge_scenes(scene_ids, asset_dir, county_pixel_dir, asset_type):
                                pixel_id + '_{}.tif'.format(asset_type))
 
     try:
-        check_output(['gdalbuildvrt', '-overwrite', vrt_path] + paths,
-                      stderr=STDOUT)
-    except CalledProcessError as e:
-        print(e.output)
-        raise
-
-    try:
         check_output(['gdalwarp',
                       '-of',
                       'GTiff',
                       '-cutline',
                       gj_path,
                       '-crop_to_cutline',
-                      '-overwrite',
-                      vrt_path,
-                      output_tiff],
+                      '-overwrite'] +
+                      paths +
+                      [output_tiff],
                      stderr=STDOUT)
-
-    # print("Wrote merged tiff to {}".format(output_tiff))
 
     except CalledProcessError as e:
         print(e.output)
         raise
 
     return output_tiff
-
-
-
-#
-# def merge_scenes_rasterio(scene_ids, asset_dir, county_pixel_dir, asset_type):
-#     paths = [glob(os.path.join(asset_dir, '{}_{}.tif')
-#                          .format(sid, asset_type))[0] for sid in scene_ids]
-#
-#     planet_crs = {'proj': 'utm',
-#                   'zone': 37,
-#                   'ellps': 'WGS84',
-#                   'datum': 'WGS84',
-#                   'units': 'm',
-#                   'no_defs': True}
-#
-#     srcs = [rasterio.open(p, crs=planet_crs) for p in paths]
-#
-#     geojson_proj_file = os.path.join(county_pixel_dir,
-#                                      'geojson_epsg32637.geojson')
-#     with open(geojson_proj_file) as gj_file:
-#         reprojgeoj = json.load(gj_file)
-#
-#     out_image, out_transform = merge(srcs, bounds=features.bounds(reprojgeoj))
-#
-#     # save the resulting raster
-#     out_meta = srcs[0].meta.copy()
-#     out_meta.update({"driver": "GTiff",
-#                      "height": out_image.shape[1],
-#                      "width": out_image.shape[2],
-#                      "transform": out_transform})
-#
-#     pixel_id = os.path.dirname(county_pixel_dir)
-#     raster_merged_path = os.path.join(county_pixel_dir,
-#                                       pixel_id + '.tif')
-#
-#     with rasterio.open(raster_merged_path, "w", **out_meta) as dest:
-#         dest.write(out_image)
 
 
 @click.command()
