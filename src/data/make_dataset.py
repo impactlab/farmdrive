@@ -6,7 +6,6 @@ from subprocess import run
 
 import click
 from dotenv import find_dotenv, load_dotenv
-from osgeo import ogr, osr
 import pandas as pd
 from tqdm import tqdm
 
@@ -20,6 +19,7 @@ PROJECT_ROOT = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir)
 BADFILES = [
     'GEFSOC-ISRIC-disclaimer.tif' # just an image, not actual raster data
 ]
+
 
 @click.command()
 def main():
@@ -41,6 +41,7 @@ def main():
 
     # get all crop price information and put it in a single csv
     process_crop_prices()
+
 
 def load_geo_info(pattern, sql_generating_cmd):
     """ Finds files using the glob "pattern" and then executes
