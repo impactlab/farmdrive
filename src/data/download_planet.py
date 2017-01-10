@@ -46,6 +46,9 @@ def query_for_aois(county_name, crop_table, crop_name):
         crop_table
         crop_name
     """
+    county_line = "(SELECT county.geom FROM county WHERE county.county = '{}') AS clipped_geom".format(county_name)
+    country_line = "(SELECT ken.geom from ken) AS clipped_geom"
+
     # individual geojson polygons for each raster pixel
     query = """
     SELECT
@@ -59,18 +62,22 @@ def query_for_aois(county_name, crop_table, crop_name):
       (SELECT (ST_PixelAsPolygons(ST_Union(ST_Clip("{crop_table}".rast, clipped_geom.geom)))).*
         FROM
           "{crop_table}",
-          (SELECT county.geom FROM county WHERE county.county = '{county_name}') AS clipped_geom
+          {geo_aoi_line}
         WHERE ST_Intersects("{crop_table}".rast, clipped_geom.geom)
       ) AS poly_pixels;
     """
+
     query = query.format(crop_name=crop_name,
                          crop_table=crop_table,
-                         county_name=county_name)
+                         county_name=county_name,
+                         geo_aoi_line=country_line if county_name == 'Kenya' else county_line)
 
     # Execute the query in the session
     result = session.execute(query)
 
     aoi_raster = result.fetchall()
+
+    print("Selected {} tiles from crop table...".format(len(aoi_raster)))
     return aoi_raster
 
 
