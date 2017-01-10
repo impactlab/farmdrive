@@ -118,7 +118,10 @@ def load_data(labels, height, width, asset_type, data_root, target_var):
         X.append(x)
         y.append([row[target_var]])
 
-    return np.array(X), np.array(y)
+    X, y = np.array(X), np.array(y)
+
+    # we need to set tensorflow (tf) ordering for best performance
+    return X.transpose((0, 2, 3, 1)), y
 
 
 def get_pretrained_model(model_class, weights='imagenet'):
@@ -155,12 +158,12 @@ def get_data_generators(X_train,
                         X_valid,
                         y_valid,
                         preprocess_func,
-                        shear_range=0.2,
-                        rotation_range=10,
+                        shear_range=0.5,
+                        rotation_range=20,
                         vertical_flip=True,
                         horizontal_flip=True,
-                        train_batch_size=30,
-                        validation_batch_size=30):
+                        train_batch_size=265,
+                        validation_batch_size=265):
     """ Creates flow objects to convert input images into a large dataset
         of different images with different shears, rotations, and flips.
 
@@ -210,7 +213,7 @@ def train_new_layers(model,
         layer.trainable = False
 
     # compile the model (should be done *after* setting layers to non-trainable)
-    rms = RMSprop(lr=0.0001, rho=0.9, epsilon=1e-08, decay=0.0)
+    rms = RMSprop(lr=0.03, rho=0.9, epsilon=1e-08, decay=0.0)
     model.compile(optimizer=rms, loss=loss)
 
     # train the model on the new data for a few epochs

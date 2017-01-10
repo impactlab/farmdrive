@@ -10,7 +10,7 @@ import pandas as pd
 @click.argument('dir_path')
 @click.argument('output_file')
 @click.argument('input_filename')
-@click.option('crop', default='maize')
+@click.option('--crop', default='maize')
 def gather_target_data(dir_path, output_file, input_filename, crop):
     """ We right out the per-pixel crop values to a geojson file
         as part of our querying and include that file in each
