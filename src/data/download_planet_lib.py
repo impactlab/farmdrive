@@ -29,10 +29,15 @@ class RateLimitException(Exception):
 
 
 def handle_page(page):
-    scenes = [{'id': item['id'],
-               'updated': item['properties']['updated'],
-               'cloud_cover': item['properties']['cloud_cover']}
-              for item in page['features']]
+    try:
+        scenes = [{'id': item['id'],
+                   'updated': item['properties']['updated'],
+                   'cloud_cover': item['properties']['cloud_cover']}
+                  for item in page['features']]
+    except Exception as e:
+        print(page)
+        raise
+
 
     return scenes
 
