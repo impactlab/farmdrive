@@ -105,7 +105,8 @@ def load_data(labels, height, width, asset_type, data_root, target_var):
         image_path = os.path.join(data_root, index, filename)
 
         if not os.path.exists(image_path):
-            print(image_path)
+            print('{} Does not exist. Skipping...'.format(image_path))
+            continue
 
         with rasterio.open(image_path) as src:
             # planet images from visual asset are processed to
@@ -162,8 +163,8 @@ def get_data_generators(X_train,
                         rotation_range=20,
                         vertical_flip=True,
                         horizontal_flip=True,
-                        train_batch_size=265,
-                        validation_batch_size=265):
+                        train_batch_size=65,
+                        validation_batch_size=65):
     """ Creates flow objects to convert input images into a large dataset
         of different images with different shears, rotations, and flips.
 
@@ -213,7 +214,7 @@ def train_new_layers(model,
         layer.trainable = False
 
     # compile the model (should be done *after* setting layers to non-trainable)
-    rms = RMSprop(lr=0.03, rho=0.9, epsilon=1e-08, decay=0.0)
+    rms = RMSprop(lr=0.01, rho=0.9, epsilon=1e-08, decay=0.0)
     model.compile(optimizer=rms, loss=loss)
 
     # train the model on the new data for a few epochs
