@@ -34,8 +34,8 @@ download_planet_maize_nakuru_visual:
 	python src/data/download_planet.py Nakuru 'maiz_p--ssa' maize --resize --asset_type visual --cloud_cover 0.1 --min_date 2016-09-01T00:00:00+00:00
 
 ## Download visual plan data for Maize + full country of kenya and resize for InceptionV3
-download_planet_maize_kenya_visual:
-	python src/data/download_planet.py Kenya 'maiz_p--ssa' maize --resize --asset_type visual --cloud_cover 0.05 --min_date 2016-09-01T00:00:00+00:00
+download_planet_maize_kenya:
+	python src/data/download_planet.py Kenya 'maiz_p--ssa' maize --resize --asset_type analytic --cloud_cover 0.05 --min_date 2016-09-01T00:00:00+00:00
 
 ## Trains the model for Nakuru
 train_keras_model_nakuru:
@@ -44,7 +44,7 @@ train_keras_model_nakuru:
 ## Trains a model for all of Kenya
 train_keras_model_kenya:
 	python src/models/gather_target.py data/raw/planet/Kenya/ data/raw/planet/Kenya/maize_yield.csv geojson_epsg4326.geojson --crop maize;
-	python src/models/train_model.py data/raw/planet/Kenya/ data/raw/planet/Kenya/maize_yield.csv test_model.kmodel --n_epoch 20$
+	python src/models/train_model.py data/raw/planet/Kenya/ data/raw/planet/Kenya/maize_yield.csv test_model.kmodel --n_epoch 30 --model InceptionV3 --asset_type=visual --loss=mean_absolute_percentage_error
 
 ## Create county-level geographic features
 county_geo_features:
@@ -72,6 +72,14 @@ sync_data_to_s3:
 ## Pull whatever is on S3 down to local storage
 sync_data_from_s3:
 	aws s3 sync s3://$(BUCKET)/data/ data/
+
+## Sync training images for algorithms to S3
+sync_training_data_to_s3:
+	aws s3 cp data/raw/planet/Kenya/ s3://drivendata-client-farmdrive/data/processed/training-images/ --exclude "*" --include "*_2*x2*.tif" --recursive
+
+## Sync training images for algorithms from S3
+sync_training_data_from_s3:
+	aws s3 cp s3://drivendata-client-farmdrive/data/processed/training-images/ data/processed/training-images/ --recursive
 
 ## Execute the test suite.
 test:
