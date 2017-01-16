@@ -11,6 +11,7 @@ import json
 from retrying import retry
 
 import dotenv
+from tqdm import tqdm
 
 ASSET_URL = 'https://api.planet.com/data/v1/item-types/{}/items/{}/assets/'
 SEARCH_URL = 'https://api.planet.com/data/v1/quick-search'
@@ -34,7 +35,8 @@ def handle_page(page):
                'cloud_cover': item['properties']['cloud_cover']}
               for item in page['features']]
 
-    return scenes
+    # pull all the data out
+    return page['features']
 
 
 def retry_if_rate_limit_error(exception):
@@ -92,8 +94,12 @@ def activate(item_id, item_type, asset_type):
 
     check_status(result)
 
-    print(item_id, result.json())
-    status = result.json()[asset_type]['status']
+    try:
+        status = result.json()[asset_type]['status']
+    except KeyError:
+        print('Asset type {} not available for {}. Skipping...ac'.format(asset_type, item_id))
+        return True
+
     if status == 'active':
         print('Item already active: {}'.format(item_id))
         return False
@@ -116,7 +122,12 @@ def check_activation(item_id, item_type, asset_type):
 
     check_status(result)
 
-    status = result.json()[asset_type]['status']
+    try:
+        status = result.json()[asset_type]['status']
+    except KeyError:
+        print('Asset type {} not available for {}. Skipping...'.format(asset_type, item_id))
+        return True
+
     print('{}: {}'.format(item_id, status))
 
     if status == 'active':
@@ -157,7 +168,7 @@ def download(url, path, item_id, asset_type, overwrite):
 def process_activation(func, id_list, item_type, asset_type):
     results = []
 
-    for item_id in id_list:
+    for item_id in tqdm(id_list):
         result = func(item_id, item_type, asset_type)
         results.append(result)
 
