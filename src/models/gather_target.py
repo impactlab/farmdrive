@@ -17,6 +17,9 @@ def gather_target_data(dir_path, output_file, input_filename, crop):
         directory with an image. This method parses each geojson
         file to get that yield value and then outputs a csv with the
         folder name and value to `output_file`.
+
+        input_filename should be geojson_epsg4326.geojson by
+        default
     """
     yields = []
     ids = []
