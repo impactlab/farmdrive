@@ -105,22 +105,33 @@ def write_and_reproject_per_pixel_geojson(aoi_geojson, county_pixel_dir):
         raise
 
 
-def build_planet_query(geojson_aoi,
+def build_planet_query(geojson_aoi=None,
+                       bbox=None,
                        min_date="2016-07-31T00:00:00.000Z",
                        max_date="2016-10-31T00:00:00.000Z",
                        cloud_cover=0.05):
     """ Creates a query for the planet v1 api with a date range,
         area of interest, max cloud cover %
     """
-    if 'geometry' in geojson_aoi:
-        geojson_aoi = geojson_aoi['geometry']
 
-    # filter for items the overlap with our chosen geometry
     geometry_filter = {
-      "type": "GeometryFilter",
-      "field_name": "geometry",
-      "config": geojson_aoi
-    }
+          "type": "GeometryFilter",
+          "field_name": "geometry",
+        }
+
+    if geojson_aoi:
+        if 'geometry' in geojson_aoi:
+            geojson_aoi = geojson_aoi['geometry']
+
+        # filter for items the overlap with our chosen geometry
+        geometry_filter['config'] = geojson_aoi
+    elif bbox:
+        geometry_filter['config'] = {
+            "type": "Polygon",
+            "coordinates": bbox_to_coords(bbox)
+            }
+    else:
+        raise Exception('build_planet_query must be called with a geojson_aoi or a bounding boxs')
 
     # MAIZE harvest season in Kenya is Aug - Oct
     date_range_filter = {
@@ -325,7 +336,7 @@ def download_county_crop_tiles(county_name,
                 extra_query_kwargs['cloud_cover'] = cloud_cover
 
             # get the representation of the query
-            planet_query = build_planet_query(aoi, **extra_query_kwargs)
+            planet_query = build_planet_query(geojson_aoi=aoi, **extra_query_kwargs)
 
             # activate and download the tiles
             scence_ids = download_tiles_from_aoi(planet_query,
@@ -356,6 +367,12 @@ def download_county_crop_tiles(county_name,
             json.dump(failed_aois, fail_log)
         print("Wrote scenes that failed to activate to {}".format(fail_path))
 
+
+def bbox_to_coords(bbox):
+    xmin, ymin, xmax, ymax = [float(i) for i in bbox]
+    coords = [[[xmin, ymax], [xmin, ymin], [xmax, ymin],
+              [xmax, ymax], [xmin, ymax]]]
+    return coords
 
 
 if __name__ == '__main__':
