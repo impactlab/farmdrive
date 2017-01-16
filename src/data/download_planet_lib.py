@@ -102,7 +102,7 @@ def activate(item_id, item_type, asset_type):
     try:
         status = result.json()[asset_type]['status']
     except KeyError:
-        print('Asset type {} not available for {}. Skipping...ac'.format(asset_type, item_id))
+        print('Asset type {} not available for {}. Skipping...'.format(asset_type, item_id))
         return True
 
     if status == 'active':

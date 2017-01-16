@@ -35,6 +35,17 @@ def resize_for_inceptionv3(input_path):
     resize_tiff(input_path, output_path, 299, 299)
 
 
+def resize_for_vgg(input_path):
+    """ The VGG16 and VGG19 models take images that are 224x224. This helper
+        uses GDAL to resize tiffs to the proper size and output those
+        files in the same folder with _224x224 appended to the filename.
+    """
+    path, ext = os.path.splitext(input_path)
+    output_path = "{}{}{}".format(path, '_224x224', ext)
+
+    resize_tiff(input_path, output_path, 224, 224)
+
+
 def resize_all_in_dir(dir_path,
                       ext='.tiff',
                       recursive=True,

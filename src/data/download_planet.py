@@ -17,9 +17,10 @@ import sqlalchemy
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from tqdm import tqdm
+import shapefile
 
 import download_planet_lib as planet_lib
-from image_processing import resize_for_inceptionv3
+from image_processing import resize_for_inceptionv3, resize_for_vgg
 
 # get variables from .env file
 dotenv.load_dotenv(dotenv.find_dotenv())
@@ -167,34 +168,26 @@ def has_local_scene(scene_id, asset_type, asset_dir):
     return os.path.exists(scene_path)
 
 
-def download_tiles_from_aoi(planet_query,
-                            data_dir,
-                            asset_type='analytic',
-                            search_type='PSOrthoTile'):
-    """ Activates the scenes in the planet query and downloads
-        them to the data_dir if they are not there already.
-    """
-
-    # get the planet scenes IDs for our query
+def get_sorted_scenes_from_query(query, search_type):
     scenes = planet_lib.run_search({'item_types': [search_type],
-                                    'filter': planet_query})
+                                    'filter': query})
 
     # gdal uses the order of filenames for merging; by sorting
     # we prefer the most recent image with the least cloud_cover in
     # the final merged image.
     scenes = sorted(scenes,
-                    key=lambda x: (x['cloud_cover'], x['updated']),
+                    key=lambda x: (x['properties']['cloud_cover'], x['properties']['updated']),
                     reverse=True)
 
     scene_ids = [s['id'] for s in scenes]
 
-    # check for scenes that we _don't_ already have
-    not_local_scene_ids = [sid for sid in scene_ids if not \
-                           has_local_scene(sid, asset_type, data_dir)]
+    return scene_ids
 
+
+def wait_for_scene_activation(scene_ids, search_type, asset_type, data_dir):
     # mark the scenes we want for activation
     planet_lib.process_activation(planet_lib.activate,
-                                  not_local_scene_ids,
+                                  scene_ids,
                                   search_type,
                                   asset_type)
 
@@ -202,7 +195,7 @@ def download_tiles_from_aoi(planet_query,
     SLEEP_PERIODS = 120
     for i in tqdm(range(SLEEP_PERIODS)):
         activated = planet_lib.process_activation(planet_lib.check_activation,
-                                                  not_local_scene_ids,
+                                                  scene_ids,
                                                   search_type,
                                                   asset_type)
 
@@ -215,9 +208,40 @@ def download_tiles_from_aoi(planet_query,
     if not all(activated):
         fail_path = os.path.join(data_dir, 'failed_scenes.log')
         with open(fail_path, 'w') as fail_log:
-            failed_ids = list(compress(not_local_scene_ids, activated))
+            failed_ids = list(compress(scene_ids, activated))
             fail_log.write(failed_ids)
         print("Wrote scenes that failed to activate to {}".format(fail_path))
+
+
+def activate_all_of_kenya(search_type, asset_type, query_kwargs={}):
+    # get bounding box from shapefile for Kenya
+    data_root = os.path.join(PLANET_DATA_ROOT, os.pardir)
+    sf = shapefile.Reader(data_root + "/KEN_outline_SHP/ken")
+    bbox = sf.bbox
+
+    q_bbox = build_planet_query(bbox=bbox, **query_kwargs)
+    scenes = get_sorted_scenes_from_query(q_bbox, search_type=search_type)
+    wait_for_scene_activation(scenes,
+                              search_type=search_type,
+                              asset_type=asset_type)
+
+
+def download_tiles_from_aoi(planet_query,
+                            data_dir,
+                            asset_type='analytic',
+                            search_type='PSOrthoTile'):
+    """ Activates the scenes in the planet query and downloads
+        them to the data_dir if they are not there already.
+    """
+
+    # get the planet scenes IDs for our query
+    scene_ids = get_sorted_scenes_from_query(planet_query, search_type)
+
+    # check for scenes that we _don't_ already have
+    not_local_scene_ids = [sid for sid in scene_ids if not
+                           has_local_scene(sid, asset_type, data_dir)]
+
+    wait_for_scene_activation()
 
     downloaded = planet_lib.process_download(data_dir,
                                              not_local_scene_ids,
@@ -293,6 +317,8 @@ def download_county_crop_tiles(county_name,
     # get the areas of interest from the postgres database
     geojson_aois = query_for_aois(county_name, crop_table, crop_name)
 
+    # if we want to limit the number of aois we work on, we can use
+    # the aoi_selector flag; this is useful for debugging
     if aoi_selector:
         if ':' in aoi_selector:
             mini, maxi = map(int, aoi_selector.split(':'))
@@ -302,6 +328,22 @@ def download_county_crop_tiles(county_name,
 
     if not isinstance(geojson_aois, collections.Iterable):
         geojson_aois = [(geojson_aois, )]
+
+    # override defaults if they are passed
+    extra_query_kwargs = {}
+    if min_date:
+        extra_query_kwargs['min_date'] = min_date
+    if max_date:
+        extra_query_kwargs['max_date'] = max_date
+    if cloud_cover:
+        extra_query_kwargs['cloud_cover'] = cloud_cover
+
+    # if we're working on all of Kenya, scene activation can take a very long
+    # time we'll frontload activating off of the scenes in the country
+    if county_name == 'Kenya':
+        activate_all_of_kenya(search_type,
+                              asset_type,
+                              query_kwargs=extra_query_kwargs)
 
     # download images for every area of interest
     failed_aois = []
@@ -326,17 +368,9 @@ def download_county_crop_tiles(county_name,
             # get the geojson and write in both projections
             write_and_reproject_per_pixel_geojson(aoi, county_pixel_dir)
 
-            # override defaults if they are passed
-            extra_query_kwargs = {}
-            if min_date:
-                extra_query_kwargs['min_date'] = min_date
-            if max_date:
-                extra_query_kwargs['max_date'] = max_date
-            if cloud_cover:
-                extra_query_kwargs['cloud_cover'] = cloud_cover
-
             # get the representation of the query
-            planet_query = build_planet_query(geojson_aoi=aoi, **extra_query_kwargs)
+            planet_query = build_planet_query(geojson_aoi=aoi,
+                                              **extra_query_kwargs)
 
             # activate and download the tiles
             scence_ids = download_tiles_from_aoi(planet_query,
@@ -349,7 +383,9 @@ def download_county_crop_tiles(county_name,
                                        county_pixel_dir,
                                        asset_type)
 
+            # These are the most common sizes for many pre-trained CNNs
             resize_for_inceptionv3(output_path)
+            resize_for_vgg(output_path)
 
 
         except Exception as e:
