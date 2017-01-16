@@ -41,6 +41,11 @@ download_planet_maize_kenya_visual:
 train_keras_model_nakuru:
 	python src/models/train_model.py data/raw/planet/Nakuru/ data/raw/planet/Nakuru/maize_yield.csv test_model.kmodel --n_epoch 10
 
+## Trains a model for all of Kenya
+train_keras_model_kenya:
+	python src/models/gather_target.py data/raw/planet/Kenya/ data/raw/planet/Kenya/maize_yield.csv geojson_epsg4326.geojson --crop maize;
+	python src/models/train_model.py data/raw/planet/Kenya/ data/raw/planet/Kenya/maize_yield.csv test_model.kmodel --n_epoch 20$
+
 ## Create county-level geographic features
 county_geo_features:
 	runipy notebooks/1.5-pjb-county-geo-features.ipynb

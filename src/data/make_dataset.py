@@ -9,7 +9,7 @@ from dotenv import find_dotenv, load_dotenv
 import pandas as pd
 from tqdm import tqdm
 
-from external.avl2qml import avl2qml
+#from external.avl2qml import avl2qml
 from utils import date_from_filename, find_header_row
 
 
@@ -37,7 +37,7 @@ def main():
     load_geo_info(tif_pattern, tif_cmd)
 
     # create qgis styles from arcgis legend files
-    convert_avl_to_qml()
+#    convert_avl_to_qml()
 
     # get all crop price information and put it in a single csv
     process_crop_prices()
