@@ -93,6 +93,7 @@ ENV/
 
 # exclude the data from source control
 /data/
+tmp/
 
 # R
 .Rhistory
