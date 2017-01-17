@@ -374,7 +374,7 @@ def download_county_crop_tiles(county_name,
                                        county_name)
 
             county_pixel_dir = os.path.join(county_data,
-                                            aoi['id'])
+                                            aoi['id'] + '_' + season)
 
             asset_dir = os.path.join(county_data,
                                      'assets')
