@@ -39,7 +39,7 @@ activate_planet_kenya:
 
 ## Download visual plan data for Maize + full country of kenya and resize for InceptionV3
 download_planet_maize_kenya:
-	python src/data/download_planet.py Kenya 'maiz_p--ssa' maize --resize --asset_type analytic --cloud_cover 0.05 --min_date 2016-09-01T00:00:00+00:00
+	python src/data/download_planet.py Kenya 'maiz_p--ssa' maize --resize --asset_type visual --cloud_cover 0.05 --season summer
 
 ## Trains the model for Nakuru
 train_keras_model_nakuru:
@@ -48,7 +48,7 @@ train_keras_model_nakuru:
 ## Trains a model for all of Kenya
 train_keras_model_kenya:
 	python src/models/gather_target.py data/raw/planet/Kenya/ data/raw/planet/Kenya/maize_yield.csv geojson_epsg4326.geojson --crop maize;
-	python src/models/train_model.py data/raw/planet/Kenya/ data/raw/planet/Kenya/maize_yield.csv test_model.kmodel --n_epoch 30 --model InceptionV3 --asset_type=visual --loss=mean_absolute_percentage_error
+	python src/models/train_model.py data/raw/planet/Kenya/ data/raw/planet/Kenya/maize_yield.csv test_model.kmodel --n_epoch 60 --model InceptionV3 --asset_type=visual --loss=mean_absolute_error
 
 ## Create county-level geographic features
 county_geo_features:
