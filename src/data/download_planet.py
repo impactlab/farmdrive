@@ -1,5 +1,4 @@
 import collections
-from glob import glob
 from itertools import compress
 import json
 import os
@@ -10,9 +9,6 @@ import traceback
 
 import click
 import dotenv
-import rasterio
-from rasterio import features
-from rasterio.merge import merge
 import sqlalchemy
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -223,7 +219,8 @@ def activate_all_of_kenya(search_type, asset_type, query_kwargs={}):
     scenes = get_sorted_scenes_from_query(q_bbox, search_type=search_type)
     wait_for_scene_activation(scenes,
                               search_type=search_type,
-                              asset_type=asset_type)
+                              asset_type=asset_type,
+                              data_dir=PLANET_DATA_ROOT)
 
 
 def download_tiles_from_aoi(planet_query,
@@ -241,7 +238,10 @@ def download_tiles_from_aoi(planet_query,
     not_local_scene_ids = [sid for sid in scene_ids if not
                            has_local_scene(sid, asset_type, data_dir)]
 
-    wait_for_scene_activation()
+    wait_for_scene_activation(not_local_scene_ids,
+                              search_type=search_type,
+                              asset_type=asset_type,
+                              data_dir=data_dir)
 
     downloaded = planet_lib.process_download(data_dir,
                                              not_local_scene_ids,
@@ -267,7 +267,6 @@ def merge_scenes(scene_ids, asset_dir, county_pixel_dir, asset_type):
     gj_path = os.path.join(county_pixel_dir, 'geojson_epsg32637.geojson')
 
     pixel_id = os.path.split(county_pixel_dir)[1]
-    print("PID: ", pixel_id)
     output_tiff = os.path.join(county_pixel_dir,
                                pixel_id + '_{}.tif'.format(asset_type))
 
@@ -300,6 +299,8 @@ def merge_scenes(scene_ids, asset_dir, county_pixel_dir, asset_type):
 @click.option('--cloud_cover', default='', help='Percent cloud cover allowed 0-1.')
 @click.option('--asset_type', default='analytic', help="'analytic' or 'visual' assets from the Planet API")
 @click.option('--resize', is_flag=True, help="Create a resized image after it is downloaded.")
+@click.option('--season', default=None, help="Winter, spring, summer or fall (defined as q1, q2, q3, q4)")
+@click.option('--activate_only', is_flag=True, help="Only run activation; currently only compatible with county_name=Kenya")
 def download_county_crop_tiles(county_name,
                                crop_table,
                                crop_name,
@@ -308,7 +309,9 @@ def download_county_crop_tiles(county_name,
                                max_date,
                                cloud_cover,
                                asset_type,
-                               resize):
+                               resize,
+                               season,
+                               activate_only):
     """ This script downloads planet labs data for the crop_table in county_name
         and saves it as the crop_name.
 
@@ -326,8 +329,19 @@ def download_county_crop_tiles(county_name,
         else:
             geojson_aois = geojson_aois[int(aoi_selector)]
 
+    # if geojson_aois is not a list, make it one
     if not isinstance(geojson_aois, collections.Iterable):
         geojson_aois = [(geojson_aois, )]
+
+    if season:
+        seasons = {
+            'winter': ("2016-01-01T00:00:00+00:00", "2016-03-31T00:00:00+00:00"),
+            "spring": ("2016-04-01T00:00:00+00:00", "2016-06-30T00:00:00+00:00"),
+            "summer": ("2016-07-01T00:00:00+00:00", "2016-09-30T00:00:00+00:00"),
+            "fall":   ("2016-10-01T00:00:00+00:00", "2016-12-31T00:00:00+00:00")
+        }
+
+        min_date, max_date = seasons[season]
 
     # override defaults if they are passed
     extra_query_kwargs = {}
@@ -341,9 +355,12 @@ def download_county_crop_tiles(county_name,
     # if we're working on all of Kenya, scene activation can take a very long
     # time we'll frontload activating off of the scenes in the country
     if county_name == 'Kenya':
-        activate_all_of_kenya(search_type,
+        activate_all_of_kenya('PSOrthoTile',
                               asset_type,
                               query_kwargs=extra_query_kwargs)
+
+        if activate_only:
+            return
 
     # download images for every area of interest
     failed_aois = []
@@ -386,7 +403,6 @@ def download_county_crop_tiles(county_name,
             # These are the most common sizes for many pre-trained CNNs
             resize_for_inceptionv3(output_path)
             resize_for_vgg(output_path)
-
 
         except Exception as e:
             print('>>>>>>>>>>>>>> FAILURE TO DOWNLOAD AOI >>>>>>>>>>>>>')
