@@ -111,8 +111,8 @@ def load_data(labels, height, width, asset_type, data_root, target_var):
     y = []
 
     # rescale target to 0-1
-    labels[target_var] = ((labels[target_var] - labels[target_var].min()) /
-        (labels[target_var].max() - labels[target_var].min()))
+#    labels[target_var] = ((labels[target_var] - labels[target_var].min()) /
+ #       (labels[target_var].max() - labels[target_var].min()))
 
     print('Read train images')
     for index, row in labels.iterrows():
