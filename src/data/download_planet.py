@@ -298,6 +298,7 @@ def merge_scenes(scene_ids, asset_dir, county_pixel_dir, asset_type):
 @click.option('--max_date', default='', help='End date in ISO8601')
 @click.option('--cloud_cover', default='', help='Percent cloud cover allowed 0-1.')
 @click.option('--asset_type', default='analytic', help="'analytic' or 'visual' assets from the Planet API")
+@click.option('--search_type', default='PSOrthoTile', help="'PSOrthoTile' or 'REOrthoTile'")
 @click.option('--resize', is_flag=True, help="Create a resized image after it is downloaded.")
 @click.option('--season', default=None, help="Winter, spring, summer or fall (defined as q1, q2, q3, q4)")
 @click.option('--activate_only', is_flag=True, help="Only run activation; currently only compatible with county_name=Kenya")
@@ -309,6 +310,7 @@ def download_county_crop_tiles(county_name,
                                max_date,
                                cloud_cover,
                                asset_type,
+                               search_type,
                                resize,
                                season,
                                activate_only):
@@ -355,7 +357,7 @@ def download_county_crop_tiles(county_name,
     # if we're working on all of Kenya, scene activation can take a very long
     # time we'll frontload activating off of the scenes in the country
     if county_name == 'Kenya':
-        activate_all_of_kenya('PSOrthoTile',
+        activate_all_of_kenya(search_type,
                               asset_type,
                               query_kwargs=extra_query_kwargs)
 
@@ -393,7 +395,7 @@ def download_county_crop_tiles(county_name,
             scence_ids = download_tiles_from_aoi(planet_query,
                                                  asset_dir,
                                                  asset_type=asset_type,
-                                                 search_type='PSOrthoTile')
+                                                 search_type=search_type)
 
             output_path = merge_scenes(scence_ids,
                                        asset_dir,
