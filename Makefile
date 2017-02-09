@@ -39,16 +39,32 @@ activate_planet_kenya:
 
 ## Download visual plan data for Maize + full country of kenya and resize for InceptionV3
 download_planet_maize_kenya:
-	python src/data/download_planet.py Kenya 'maiz_p--ssa' maize --resize --asset_type visual --cloud_cover 0.05 --season summer
+	python src/data/download_planet.py Kenya 'maiz_p--ssa' maize --resize --asset_type analytic --cloud_cover 0.05 --season fall
+
+## Collects just the target data for beans, maize, and potatoes from the database
+collect_target_data:
+	python src/data/download_planet.py Kenya 'bean_p--ssa' beans --collect_crop_yield_only
+	python src/data/download_planet.py Kenya 'maiz_p--ssa' maize --collect_crop_yield_only
+	python src/data/download_planet.py Kenya 'pota_p--ssa' potato --collect_crop_yield_only
 
 ## Trains the model for Nakuru
 train_keras_model_nakuru:
 	python src/models/train_model.py data/raw/planet/Nakuru/ data/raw/planet/Nakuru/maize_yield.csv test_model.kmodel --n_epoch 10
 
 ## Trains a model for all of Kenya
-train_keras_model_kenya:
-	python src/models/gather_target.py data/raw/planet/Kenya/ data/raw/planet/Kenya/maize_yield.csv geojson_epsg4326.geojson --crop maize;
-	python src/models/train_model.py data/raw/planet/Kenya/ data/raw/planet/Kenya/maize_yield.csv --season summer --n_epoch 60 --model InceptionV3 --asset_type=visual --loss=mean_absolute_error
+train_keras_model_kenya_maize:
+	python src/models/gather_target.py data/raw/planet/Kenya/ data/raw/planet/Kenya/maize_yield.csv geojson_epsg4326_maize.geojson --crop maize;
+	python src/models/train_model.py data/raw/planet/Kenya/ data/raw/planet/Kenya/maize_yield.csv --season fall --n_epoch 60 --model VGG16 --asset_type=visual --loss=mean_absolute_error
+
+## Trains a model for all of Kenya
+train_keras_model_kenya_beans:
+	python src/models/gather_target.py data/raw/planet/Kenya/ data/raw/planet/Kenya/beans_yield.csv geojson_epsg4326_beans.geojson --crop beans;
+	python src/models/train_model.py data/raw/planet/Kenya/ data/raw/planet/Kenya/beans_yield.csv --season fall --n_epoch 60 --model VGG16 --asset_type=visual --loss=mean_absolute_error --crop beans
+
+## Trains a model for all of Kenya
+train_keras_model_kenya_potato:
+	python src/models/gather_target.py data/raw/planet/Kenya/ data/raw/planet/Kenya/potato_yield.csv geojson_epsg4326_potato.geojson --crop potato;
+	python src/models/train_model.py data/raw/planet/Kenya/ data/raw/planet/Kenya/potato_yield.csv --season fall --n_epoch 60 --model VGG16 --asset_type=visual --loss=mean_absolute_error --crop potato
 
 ## Create county-level geographic features
 county_geo_features:
