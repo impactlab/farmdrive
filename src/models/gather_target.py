@@ -18,7 +18,7 @@ def gather_target_data(dir_path, output_file, input_filename, crop):
         file to get that yield value and then outputs a csv with the
         folder name and value to `output_file`.
 
-        input_filename should be geojson_epsg4326.geojson by
+        input_filename should be geojson_epsg4326_{crop}.geojson by
         default
     """
     yields = []
