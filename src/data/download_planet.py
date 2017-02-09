@@ -16,7 +16,7 @@ from tqdm import tqdm
 import shapefile
 
 import download_planet_lib as planet_lib
-from image_processing import resize_for_inceptionv3, resize_for_vgg
+from image_processing import resize_for_inceptionv3, resize_for_vgg, batch_hist_match_worker
 
 # get variables from .env file
 dotenv.load_dotenv(dotenv.find_dotenv())
@@ -78,12 +78,12 @@ def query_for_aois(county_name, crop_table, crop_name):
     return aoi_raster
 
 
-def write_and_reproject_per_pixel_geojson(aoi_geojson, county_pixel_dir):
+def write_and_reproject_per_pixel_geojson(aoi_geojson, county_pixel_dir, crop_name):
     """ Operates on a single geojson AOI to write out the current
         projection and the projection we need to work with planet.
     """
-    geojson_input = os.path.join(county_pixel_dir, 'geojson_epsg4326.geojson')
-    geojson_output = os.path.join(county_pixel_dir, 'geojson_epsg32637.geojson')
+    geojson_input = os.path.join(county_pixel_dir, 'geojson_epsg4326_{}.geojson'.format(crop_name))
+    geojson_output = os.path.join(county_pixel_dir, 'geojson_epsg32637_{}.geojson'.format(crop_name))
 
     with open(geojson_input, 'w') as gj_file:
         json.dump(aoi_geojson, gj_file)
@@ -180,10 +180,16 @@ def get_sorted_scenes_from_query(query, search_type):
     return scene_ids
 
 
-def wait_for_scene_activation(scene_ids, search_type, asset_type, data_dir):
+def wait_for_scene_activation(scene_ids, search_type, asset_type, asset_dir):
+    not_local_scenes = []
+
+    for sid in scene_ids:
+        if not has_local_scene(sid, asset_type, asset_dir):
+            not_local_scenes.append(sid)
+
     # mark the scenes we want for activation
     planet_lib.process_activation(planet_lib.activate,
-                                  scene_ids,
+                                  not_local_scenes,
                                   search_type,
                                   asset_type)
 
@@ -191,25 +197,30 @@ def wait_for_scene_activation(scene_ids, search_type, asset_type, data_dir):
     SLEEP_PERIODS = 120
     for i in tqdm(range(SLEEP_PERIODS)):
         activated = planet_lib.process_activation(planet_lib.check_activation,
-                                                  scene_ids,
+                                                  not_local_scenes,
                                                   search_type,
                                                   asset_type)
 
-        if all(activated):
+        not_activated = [not a for a in activated]
+
+        # update scenes we need to check to just the ones that are not active yet
+        not_local_scenes = list(compress(not_local_scenes, not_activated))
+
+        if all(activated) or len(not_local_scenes) == 0:
             print('All scenes activated!')
             break
         else:
             time.sleep(15)
 
     if not all(activated):
-        fail_path = os.path.join(data_dir, 'failed_scenes.log')
+        fail_path = os.path.join(asset_dir, 'failed_scenes.log')
         with open(fail_path, 'w') as fail_log:
-            failed_ids = list(compress(scene_ids, activated))
+            failed_ids = list(compress(not_local_scenes, activated))
             fail_log.write(failed_ids)
         print("Wrote scenes that failed to activate to {}".format(fail_path))
 
 
-def activate_all_of_kenya(search_type, asset_type, query_kwargs={}):
+def activate_all_of_kenya(search_type, asset_type, asset_dir, query_kwargs={}):
     # get bounding box from shapefile for Kenya
     data_root = os.path.join(PLANET_DATA_ROOT, os.pardir)
     sf = shapefile.Reader(data_root + "/KEN_outline_SHP/ken")
@@ -220,15 +231,15 @@ def activate_all_of_kenya(search_type, asset_type, query_kwargs={}):
     wait_for_scene_activation(scenes,
                               search_type=search_type,
                               asset_type=asset_type,
-                              data_dir=PLANET_DATA_ROOT)
+                              asset_dir=asset_dir)
 
 
 def download_tiles_from_aoi(planet_query,
-                            data_dir,
+                            asset_dir,
                             asset_type='analytic',
                             search_type='PSOrthoTile'):
     """ Activates the scenes in the planet query and downloads
-        them to the data_dir if they are not there already.
+        them to the asset_dir if they are not there already.
     """
 
     # get the planet scenes IDs for our query
@@ -236,21 +247,21 @@ def download_tiles_from_aoi(planet_query,
 
     # check for scenes that we _don't_ already have
     not_local_scene_ids = [sid for sid in scene_ids if not
-                           has_local_scene(sid, asset_type, data_dir)]
+                           has_local_scene(sid, asset_type, asset_dir)]
 
     wait_for_scene_activation(not_local_scene_ids,
                               search_type=search_type,
                               asset_type=asset_type,
-                              data_dir=data_dir)
+                              asset_dir=asset_dir)
 
-    downloaded = planet_lib.process_download(data_dir,
+    downloaded = planet_lib.process_download(asset_dir,
                                              not_local_scene_ids,
                                              search_type,
                                              asset_type,
                                              False)
 
     if not all(downloaded):
-        fail_path = os.path.join(data_dir, 'failed_downloads.log')
+        fail_path = os.path.join(asset_dir, 'failed_downloads.log')
         with open(fail_path, 'w') as fail_log:
             failed_ids = list(compress(not_local_scene_ids, downloaded))
             fail_log.write(failed_ids)
@@ -259,16 +270,56 @@ def download_tiles_from_aoi(planet_query,
     return scene_ids
 
 
-def merge_scenes(scene_ids, asset_dir, county_pixel_dir, asset_type):
+def merge_scenes(scene_ids, asset_dir, county_pixel_dir, asset_type, resize_pxs=1000):
     paths = [os.path.join(asset_dir, '{}_{}.tif'.format(sid, asset_type)) \
              for sid in scene_ids]
 
-    vrt_path = os.path.join(county_pixel_dir, 'mosaic.vrt')
+    resized_paths = [os.path.join(asset_dir, 'resized', '{}_{}.tif'.format(sid, asset_type)) \
+             for sid in scene_ids]
+
+    if not os.path.exists(os.path.join(asset_dir, 'resized')):
+        os.makedirs(os.path.join(asset_dir, 'resized'))
+
     gj_path = os.path.join(county_pixel_dir, 'geojson_epsg32637.geojson')
+    shape_path = os.path.join(county_pixel_dir, 'epsg4326.shp')
 
     pixel_id = os.path.split(county_pixel_dir)[1]
     output_tiff = os.path.join(county_pixel_dir,
                                pixel_id + '_{}.tif'.format(asset_type))
+
+    with open(os.path.join(county_pixel_dir, pixel_id + '_scenes.txt'), 'w') as scene_file:
+        scene_file.write("\n".join(resized_paths))
+
+    # resize all of the images
+    for to_resize_in, to_resize_out in zip(paths, resized_paths):
+        if not os.path.exists(to_resize_out):
+            try:
+                check_output(['gdalwarp',
+                      '-ts',
+                      str(resize_pxs),
+                      str(0),  # height is calculated
+                      to_resize_in,
+                      to_resize_out],
+                     stderr=STDOUT)
+            except CalledProcessError as e:
+                print(e.output)
+                raise
+
+    if asset_type == 'visual':
+        bands = "1,2,3"
+    elif asset_type == 'analytic':
+        # analytic includes NIR in band 4
+        bands = "1,2,3,4"
+    else:
+        raise ValueError("Unsupported asset type {}. Try 'visual' or 'analytic'.".format(asset_type))
+
+    matched_paths = batch_hist_match_worker(resized_paths,
+                                            1.0,
+                                            {},
+                                            bands,
+                                            'rgb',
+                                            False,
+                                            masked=asset_type == 'visual')  # analytic tiffs have no mask
 
     try:
         check_output(['gdalwarp',
@@ -278,7 +329,7 @@ def merge_scenes(scene_ids, asset_dir, county_pixel_dir, asset_type):
                       gj_path,
                       '-crop_to_cutline',
                       '-overwrite'] +
-                      paths +
+                      matched_paths +
                       [output_tiff],
                      stderr=STDOUT)
 
@@ -298,10 +349,10 @@ def merge_scenes(scene_ids, asset_dir, county_pixel_dir, asset_type):
 @click.option('--max_date', default='', help='End date in ISO8601')
 @click.option('--cloud_cover', default='', help='Percent cloud cover allowed 0-1.')
 @click.option('--asset_type', default='analytic', help="'analytic' or 'visual' assets from the Planet API")
-@click.option('--search_type', default='PSOrthoTile', help="'PSOrthoTile' or 'REOrthoTile'")
 @click.option('--resize', is_flag=True, help="Create a resized image after it is downloaded.")
 @click.option('--season', default=None, help="Winter, spring, summer or fall (defined as q1, q2, q3, q4)")
 @click.option('--activate_only', is_flag=True, help="Only run activation; currently only compatible with county_name=Kenya")
+@click.option('--collect_crop_yield_only', is_flag=True, help="Only collect crop yield information for the given crop and save with aois.")
 def download_county_crop_tiles(county_name,
                                crop_table,
                                crop_name,
@@ -310,10 +361,10 @@ def download_county_crop_tiles(county_name,
                                max_date,
                                cloud_cover,
                                asset_type,
-                               search_type,
                                resize,
                                season,
-                               activate_only):
+                               activate_only,
+                               collect_crop_yield_only):
     """ This script downloads planet labs data for the crop_table in county_name
         and saves it as the crop_name.
 
@@ -354,11 +405,21 @@ def download_county_crop_tiles(county_name,
     if cloud_cover:
         extra_query_kwargs['cloud_cover'] = cloud_cover
 
+    # create directories if we need to
+    county_data = os.path.join(PLANET_DATA_ROOT,
+                               county_name)
+
+    asset_dir = os.path.join(county_data,
+                             'assets')
+
+    os.makedirs(asset_dir, exist_ok=True)
+
     # if we're working on all of Kenya, scene activation can take a very long
     # time we'll frontload activating off of the scenes in the country
-    if county_name == 'Kenya':
-        activate_all_of_kenya(search_type,
+    if county_name == 'Kenya' and not collect_crop_yield_only:
+        activate_all_of_kenya('PSOrthoTile',
                               asset_type,
+                              asset_dir,
                               query_kwargs=extra_query_kwargs)
 
         if activate_only:
@@ -371,21 +432,16 @@ def download_county_crop_tiles(county_name,
             aoi = aoi[0]
 
         try:
-            # create directories if we need to
-            county_data = os.path.join(PLANET_DATA_ROOT,
-                                       county_name)
-
             county_pixel_dir = os.path.join(county_data,
                                             aoi['id'] + '_' + season)
 
-            asset_dir = os.path.join(county_data,
-                                     'assets')
-
             os.makedirs(county_pixel_dir, exist_ok=True)
-            os.makedirs(asset_dir, exist_ok=True)
 
             # get the geojson and write in both projections
-            write_and_reproject_per_pixel_geojson(aoi, county_pixel_dir)
+            write_and_reproject_per_pixel_geojson(aoi, county_pixel_dir, crop_name)
+
+            if collect_crop_yield_only:
+                continue
 
             # get the representation of the query
             planet_query = build_planet_query(geojson_aoi=aoi,
@@ -395,7 +451,7 @@ def download_county_crop_tiles(county_name,
             scence_ids = download_tiles_from_aoi(planet_query,
                                                  asset_dir,
                                                  asset_type=asset_type,
-                                                 search_type=search_type)
+                                                 search_type='PSOrthoTile')
 
             output_path = merge_scenes(scence_ids,
                                        asset_dir,
