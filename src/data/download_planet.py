@@ -216,7 +216,7 @@ def wait_for_scene_activation(scene_ids, search_type, asset_type, asset_dir):
         fail_path = os.path.join(asset_dir, 'failed_scenes.log')
         with open(fail_path, 'w') as fail_log:
             failed_ids = list(compress(not_local_scenes, activated))
-            fail_log.write(failed_ids)
+            fail_log.write('\n'.join(failed_ids))
         print("Wrote scenes that failed to activate to {}".format(fail_path))
 
 
