@@ -33,8 +33,9 @@ def gather_target_data(dir_path, output_file, input_filename, crop):
             crop_yield = gj_data['properties'][yield_str]
             pixel_id = gj_data['id']
 
-            yields.append(crop_yield)
-            ids.append(pixel_id)
+            if pixel_id not in ids:
+                yields.append(crop_yield)
+                ids.append(pixel_id)
 
     # write to csv
     (pd.DataFrame({'id': ids, yield_str: yields})

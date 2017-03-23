@@ -1,11 +1,3 @@
-'''
-In this case, we will attempt to use the Inception V3 network
-on the planet dataset.
-
-In this test, we'll attempt to fine-tune the Inception V3 network
-for the planet dataset.
-'''
-
 import os
 
 import click
@@ -58,6 +50,11 @@ def train_model(image_directory,
     """
     labels = pd.read_csv(labels_path, index_col=0)
 
+    # just train on the examples of areas with yield
+    print("A", labels.shape)
+    labels = labels[labels['{}_yield'.format(crop)] > 0].copy()
+    print("B", labels.shape)
+
     if model == 'InceptionV3':
         model_name = model
         img_width = 299
@@ -78,13 +75,13 @@ def train_model(image_directory,
     # shuffle labels so we can do train/test split with slices
     labels = shuffle(labels, random_state=234)
 
-    images, targets = load_data(labels,
-                                img_width,
-                                img_height,
-                                asset_type,
-                                image_directory,
-                                season,
-                                '{}_yield'.format(crop))
+    images, targets, _ = load_data(labels,
+                                   img_width,
+                                   img_height,
+                                   asset_type,
+                                   image_directory,
+                                   season,
+                                   '{}_yield'.format(crop))
 
     if n_validation_samples < 1:
         n_validation_samples = np.floor(images.shape[0] * n_validation_samples)
@@ -168,6 +165,7 @@ def load_data(labels,
             image_exists.append(True)
 
     labels = labels.loc[image_exists, :]
+    exisiting_image_ids = labels.index.copy()
 
     # tensorflow ordering
     X = np.zeros((labels.shape[0], width, height, 3), dtype=np.float32)
@@ -219,7 +217,7 @@ def load_data(labels,
             X[:,:,:,c] -= X[:,:,:,c].mean()
             X[:,:,:,c] /= X[:,:,:,c].std()
 
-    return X, y
+    return X, y, exisiting_image_ids
 
 
 def get_pretrained_model(model_class, weights='imagenet'):
