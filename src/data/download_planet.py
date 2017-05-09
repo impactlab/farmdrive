@@ -10,6 +10,7 @@ from xml.dom import minidom
 
 import click
 import dotenv
+from joblib import Parallel, delayed
 import sqlalchemy
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -407,6 +408,127 @@ def get_reflectance_info(sid, path, search_type):
     return coeffs
 
 
+def create_dirs_query_and_download(county_data,
+                                   aoi,
+                                   season,
+                                   crop_name,
+                                   collect_crop_yield_only,
+                                   extra_query_kwargs,
+                                   asset_dir,
+                                   asset_type,
+                                   match_hist,
+                                   reflectance,
+                                   resize):
+    county_pixel_dir = os.path.join(county_data,
+                                    aoi['id'] + '_' + season)
+
+    os.makedirs(county_pixel_dir, exist_ok=True)
+
+    # get the geojson and write in both projections
+    write_and_reproject_per_pixel_geojson(aoi, county_pixel_dir, crop_name)
+
+    if collect_crop_yield_only:
+        return
+
+    # get the representation of the query
+    planet_query = build_planet_query(geojson_aoi=aoi,
+                                      **extra_query_kwargs)
+
+
+    # activate and download the tiles
+    scene_ids = download_tiles_from_aoi(planet_query,
+                                        asset_dir,
+                                        asset_type=asset_type,
+                                        search_type='PSOrthoTile')
+
+    output_path = merge_scenes(scene_ids,
+                               asset_dir,
+                               county_pixel_dir,
+                               asset_type,
+                               crop_name,
+                               search_type='PSOrthoTile',
+                               match_histograms=match_hist,
+                               adjust_reflectance=reflectance)
+
+    # These are the most common sizes for many pre-trained CNNs
+    if resize:
+        resize_for_inceptionv3(output_path)
+        resize_for_vgg(output_path)
+
+def joblib_wrapper(county_data,
+                   aoi,
+                   season,
+                   crop_name,
+                   collect_crop_yield_only,
+                   extra_query_kwargs,
+                   asset_dir,
+                   asset_type,
+                   match_hist,
+                   reflectance,
+                   resize):
+
+    if isinstance(aoi, sqlalchemy.engine.result.RowProxy):
+        aoi = aoi[0]
+
+    return delayed(create_dirs_query_and_download)(county_data,
+                                                   aoi,
+                                                   season,
+                                                   crop_name,
+                                                   collect_crop_yield_only,
+                                                   extra_query_kwargs,
+                                                   asset_dir,
+                                                   asset_type,
+                                                   match_hist,
+                                                   reflectance,
+                                                   resize)
+
+
+def run_queries_for_each_aoi(geojson_aois,
+                             county_data,
+                             season,
+                             crop_name,
+                             collect_crop_yield_only,
+                             extra_query_kwargs,
+                             asset_dir,
+                             asset_type,
+                             match_hist,
+                             reflectance,
+                             resize):
+    # download images for every area of interest
+    failed_aois = []
+
+    with Parallel(n_jobs=-1) as parallel:
+        try:
+            parallel([joblib_wrapper(county_data,
+                                     aoi,
+                                     season,
+                                     crop_name,
+                                     collect_crop_yield_only,
+                                     extra_query_kwargs,
+                                     asset_dir,
+                                     asset_type,
+                                     match_hist,
+                                     reflectance,
+                                     resize) \
+                      for aoi in geojson_aois])
+
+        except Exception as e:
+            print('>>>>>>>>>>>>>> FAILURE TO DOWNLOAD AOI >>>>>>>>>>>>>')
+            print(e)
+            print(traceback.print_exc())
+            failed_aois.append(aoi)
+
+        print('{} of {} aois did not download correctly.'.format(len(failed_aois),
+                                                                 len(geojson_aois)))
+
+        if failed_aois:
+            fail_path = os.path.join(county_data, 'failed_aois.json')
+            with open(fail_path, 'w') as fail_log:
+                json.dump(failed_aois, fail_log)
+            print("Wrote scenes that failed to activate to {}".format(fail_path))
+
+
+
 @click.command()
 @click.argument('county_name')
 @click.argument('crop_table')
@@ -505,64 +627,17 @@ def download_county_crop_tiles(county_name,
         if activate_only:
             return
 
-    # download images for every area of interest
-    failed_aois = []
-    for aoi in geojson_aois:
-        if isinstance(aoi, sqlalchemy.engine.result.RowProxy):
-            aoi = aoi[0]
-
-        try:
-            county_pixel_dir = os.path.join(county_data,
-                                            aoi['id'] + '_' + season)
-
-            os.makedirs(county_pixel_dir, exist_ok=True)
-
-            # get the geojson and write in both projections
-            write_and_reproject_per_pixel_geojson(aoi, county_pixel_dir, crop_name)
-
-            if collect_crop_yield_only:
-                continue
-
-            # get the representation of the query
-            planet_query = build_planet_query(geojson_aoi=aoi,
-                                              **extra_query_kwargs)
-
-
-            # activate and download the tiles
-            scene_ids = download_tiles_from_aoi(planet_query,
-                                                asset_dir,
-                                                asset_type=asset_type,
-                                                search_type='PSOrthoTile')
-
-            print(scene_ids)
-
-            output_path = merge_scenes(scene_ids,
-                                       asset_dir,
-                                       county_pixel_dir,
-                                       asset_type,
-                                       crop_name,
-                                       search_type='PSOrthoTile',
-                                       match_histograms=match_hist,
-                                       adjust_reflectance=reflectance)
-
-            # These are the most common sizes for many pre-trained CNNs
-            resize_for_inceptionv3(output_path)
-            resize_for_vgg(output_path)
-
-        except Exception as e:
-            print('>>>>>>>>>>>>>> FAILURE TO DOWNLOAD AOI >>>>>>>>>>>>>')
-            print(e)
-            print(traceback.print_exc())
-            failed_aois.append(aoi)
-
-    print('{} of {} aois did not download correctly.'.format(len(failed_aois),
-                                                             len(geojson_aois)))
-
-    if failed_aois:
-        fail_path = os.path.join(county_data, 'failed_aois.json')
-        with open(fail_path, 'w') as fail_log:
-            json.dump(failed_aois, fail_log)
-        print("Wrote scenes that failed to activate to {}".format(fail_path))
+    run_queries_for_each_aoi(geojson_aois,
+                             county_data,
+                             season,
+                             crop_name,
+                             collect_crop_yield_only,
+                             extra_query_kwargs,
+                             asset_dir,
+                             asset_type,
+                             match_hist,
+                             reflectance,
+                             resize)
 
 
 def bbox_to_coords(bbox):
