@@ -1,6 +1,7 @@
 import glob
 import logging
 import os
+import shutil
 from subprocess import check_output, CalledProcessError, STDOUT
 
 import numpy as np
@@ -69,6 +70,36 @@ def resize_all_in_dir(dir_path,
                               recursive=recursive):
         resize_func(filename)
 
+
+def adjust_image_by_reflectance(p, coeffs, bands, keep_raw=False):
+    """ Overwrites a raw image with values multiplied be the
+        provided reflectance coefficient for each band.
+    """
+    with rasterio.open(p) as src:
+        updated_bands = []
+        for i in bands:
+            band = src.read(i)
+            print(band.dtype)
+            print(type(coeffs[i]))
+            new_band = (i, band.astype(np.float32) * coeffs[i])
+            updated_bands.append(new_band)
+
+        kwargs = src.meta
+
+    kwargs.update(
+        dtype=np.float32,
+        count=len(updated_bands))
+
+    # store the original raw version
+    shutil.move(p, p + "_raw")
+
+    if not keep_raw:
+        os.remove(p + "_raw")
+
+    # rewrite in same location
+    with rasterio.open(p, 'w', **kwargs) as dst:
+        for i, band_data in updated_bands:
+            dst.write_band(i, band_data)
 
 
 def batch_hist_match_worker(ref_paths, match_proportion,

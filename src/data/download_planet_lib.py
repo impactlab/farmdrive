@@ -148,7 +148,10 @@ def check_activation(item_id, item_type, asset_type):
     retry_on_exception=retry_if_rate_limit_error,
     stop_max_attempt_number=5)
 def download(url, path, item_id, asset_type, overwrite):
-    fname = '{}_{}.tif'.format(item_id, asset_type)
+    if 'xml' in asset_type:
+        fname = '{}.xml'.format(item_id)
+    else:
+        fname = '{}_{}.tif'.format(item_id, asset_type)
     local_path = os.path.join(path, fname)
 
     if not overwrite and os.path.exists(local_path):

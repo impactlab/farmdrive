@@ -31,11 +31,15 @@ data:
 
 ## Download visual planet data for Maize + Nakuru and resize for InceptionV3
 download_planet_maize_nakuru_visual:
-	python src/data/download_planet.py Nakuru 'maiz_p--ssa' maize --aoi_selector 5 --resize --asset_type analytic --cloud_cover 0.1 --season summer
+	python src/data/download_planet.py Nakuru 'maiz_p--ssa' maize --resize --asset_type analytic --cloud_cover 0.1 --season summer --reflectance
 
 ## Activate the planet images for Kenya (but don't download yet)
 activate_planet_kenya:
 	python src/data/download_planet.py Kenya 'maiz_p--ssa' maize --asset_type visual --cloud_cover 0.05 --season summer --activate_only
+
+## Activate the planet images for Kenya (but don't download yet)
+download_planet_wards:
+	python src/data/download_planet.py wards 'maiz_p--ssa' maize --wards --asset_type analytic --cloud_cover 0.05 --season fall --reflectance --resize
 
 ## Download visual plan data for Maize + full country of kenya and resize for InceptionV3
 download_planet_maize_kenya:

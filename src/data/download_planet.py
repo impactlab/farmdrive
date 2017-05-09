@@ -6,6 +6,7 @@ from subprocess import check_output, CalledProcessError, STDOUT
 import sys
 import time
 import traceback
+from xml.dom import minidom
 
 import click
 import dotenv
@@ -16,7 +17,9 @@ from tqdm import tqdm
 import shapefile
 
 import download_planet_lib as planet_lib
-from image_processing import resize_for_inceptionv3, resize_for_vgg, batch_hist_match_worker
+from image_processing import (
+    resize_for_inceptionv3, resize_for_vgg, batch_hist_match_worker, adjust_image_by_reflectance
+    )
 
 # get variables from .env file
 dotenv.load_dotenv(dotenv.find_dotenv())
@@ -28,13 +31,15 @@ engine = create_engine(os.environ.get('DATABASE_URL',
                                       'postgresql://{}/farmdrive'.format(host)))
 session = sessionmaker(bind=engine)()
 
-PLANET_DATA_ROOT = os.path.abspath(os.path.join(__file__,
+RAW_DATA_ROOT = os.path.abspath(os.path.join(__file__,
                                                 os.pardir,
                                                 os.pardir,
                                                 os.pardir,
                                                 'data',
-                                                'raw',
-                                                'planet'))
+                                                'raw'))
+
+PLANET_DATA_ROOT = os.path.join(RAW_DATA_ROOT,
+                                'planet')
 
 
 def query_for_aois(county_name, crop_table, crop_name):
@@ -77,6 +82,30 @@ def query_for_aois(county_name, crop_table, crop_name):
     print("Selected {} tiles from crop table...".format(len(aoi_raster)))
     return aoi_raster
 
+
+def get_ward_aois(wards_path=os.path.join(RAW_DATA_ROOT,'Ward Shapefiles', 'ward.results.geojson')):
+    with open(wards_path, 'r') as wards_file:
+        wards_json = json.load(wards_file)
+
+    aois = wards_json['features']
+
+    def _set_id_as_name(aoi):
+        aoi_name = aoi['properties']["NAME"]
+
+        aoi_name = aoi_name.replace('/', '-')
+        aoi_name = aoi_name.replace("\\", "-")
+        aoi_name = aoi_name.replace("'", '')
+        aoi_name = aoi_name.replace(" ", "-")
+
+
+
+        aoi['id'] = aoi_name
+        print("------  AOI ID: ", aoi['id'])
+        return aoi
+
+    aois = list(map(_set_id_as_name, aois))
+
+    return aois
 
 def write_and_reproject_per_pixel_geojson(aoi_geojson, county_pixel_dir, crop_name):
     """ Operates on a single geojson AOI to write out the current
@@ -270,7 +299,8 @@ def download_tiles_from_aoi(planet_query,
     return scene_ids
 
 
-def merge_scenes(scene_ids, asset_dir, county_pixel_dir, asset_type, resize_pxs=1000):
+def merge_scenes(scene_ids, asset_dir, county_pixel_dir, asset_type, crop, search_type,
+                 match_histograms=False, adjust_reflectance=False, resize_pxs=1000):
     paths = [os.path.join(asset_dir, '{}_{}.tif'.format(sid, asset_type)) \
              for sid in scene_ids]
 
@@ -280,7 +310,7 @@ def merge_scenes(scene_ids, asset_dir, county_pixel_dir, asset_type, resize_pxs=
     if not os.path.exists(os.path.join(asset_dir, 'resized')):
         os.makedirs(os.path.join(asset_dir, 'resized'))
 
-    gj_path = os.path.join(county_pixel_dir, 'geojson_epsg32637.geojson')
+    gj_path = os.path.join(county_pixel_dir, 'geojson_epsg32637_{}.geojson'.format(crop))
     shape_path = os.path.join(county_pixel_dir, 'epsg4326.shp')
 
     pixel_id = os.path.split(county_pixel_dir)[1]
@@ -313,13 +343,21 @@ def merge_scenes(scene_ids, asset_dir, county_pixel_dir, asset_type, resize_pxs=
     else:
         raise ValueError("Unsupported asset type {}. Try 'visual' or 'analytic'.".format(asset_type))
 
-    matched_paths = batch_hist_match_worker(resized_paths,
-                                            1.0,
-                                            {},
-                                            bands,
-                                            'rgb',
-                                            False,
-                                            masked=asset_type == 'visual')  # analytic tiffs have no mask
+    if match_histograms:
+        matched_paths = batch_hist_match_worker(resized_paths,
+                                                1.0,
+                                                {},
+                                                bands,
+                                                'rgb',
+                                                False,
+                                                masked=asset_type == 'visual')  # analytic tiffs have no mask
+    else:
+        matched_paths = resized_paths
+
+    if adjust_reflectance:
+        for sid, image_path, xml_path in zip(scene_ids, matched_paths, paths):
+            reflectance_coeffs = get_reflectance_info(sid, xml_path, search_type)
+            adjust_image_by_reflectance(image_path, reflectance_coeffs, list(reflectance_coeffs.keys()))
 
     try:
         check_output(['gdalwarp',
@@ -340,10 +378,40 @@ def merge_scenes(scene_ids, asset_dir, county_pixel_dir, asset_type, resize_pxs=
     return output_tiff
 
 
+def get_reflectance_info(sid, path, search_type):
+    directory = os.path.dirname(path)
+
+    fname = '{}.xml'.format(sid)
+
+    wait_for_scene_activation([sid], search_type, 'analytic_xml', directory)
+
+    planet_lib.process_download(directory,
+                                [sid],
+                                search_type,
+                                'analytic_xml',
+                                False)
+
+    xml_path = os.path.join(directory, fname)
+    xmldoc = minidom.parse(xml_path)
+    nodes = xmldoc.getElementsByTagName("ps:bandSpecificMetadata")
+
+    # XML parser refers to bands by numbers 1-4
+    coeffs = {}
+    for node in nodes:
+        bn = node.getElementsByTagName("ps:bandNumber")[0].firstChild.data
+        if bn in ['1', '2', '3', '4']:
+            i = int(bn)
+            value = node.getElementsByTagName("ps:reflectanceCoefficient")[0].firstChild.data
+            coeffs[i] = float(value)
+
+    return coeffs
+
+
 @click.command()
 @click.argument('county_name')
 @click.argument('crop_table')
 @click.argument('crop_name')
+@click.option('--wards', is_flag=True, default=False)
 @click.option('--aoi_selector', default=None, type=str, help='Index of aoi to use if we want just a few; accepts integers and ranges (e.g, 1:10).')
 @click.option('--min_date', default='', help='Start date in ISO8601')
 @click.option('--max_date', default='', help='End date in ISO8601')
@@ -353,9 +421,12 @@ def merge_scenes(scene_ids, asset_dir, county_pixel_dir, asset_type, resize_pxs=
 @click.option('--season', default=None, help="Winter, spring, summer or fall (defined as q1, q2, q3, q4)")
 @click.option('--activate_only', is_flag=True, help="Only run activation; currently only compatible with county_name=Kenya")
 @click.option('--collect_crop_yield_only', is_flag=True, help="Only collect crop yield information for the given crop and save with aois.")
+@click.option('--match_hist', is_flag=False, help="Normalize histograms for scenes that will be joined. Not recommended with reflectance.")
+@click.option('--reflectance', is_flag=True, help="Multiply pixel values by TOA reflectance coefficients.")
 def download_county_crop_tiles(county_name,
                                crop_table,
                                crop_name,
+                               wards,
                                aoi_selector,
                                min_date,
                                max_date,
@@ -364,14 +435,23 @@ def download_county_crop_tiles(county_name,
                                resize,
                                season,
                                activate_only,
-                               collect_crop_yield_only):
+                               collect_crop_yield_only,
+                               match_hist,
+                               reflectance):
     """ This script downloads planet labs data for the crop_table in county_name
         and saves it as the crop_name.
 
         Example: python download_planet.py Nakuru 'maiz_p--ssa' maize
     """
-    # get the areas of interest from the postgres database
-    geojson_aois = query_for_aois(county_name, crop_table, crop_name)
+
+    if wards:
+        geojson_aois = get_ward_aois()
+    else:
+        # get the areas of interest from the postgres database
+        geojson_aois = query_for_aois(county_name, crop_table, crop_name)
+
+    if reflectance and match_hist:
+        raise Exception("It is not recommended to use histogram matching and the reflectance values.")
 
     # if we want to limit the number of aois we work on, we can use
     # the aoi_selector flag; this is useful for debugging
@@ -447,16 +527,23 @@ def download_county_crop_tiles(county_name,
             planet_query = build_planet_query(geojson_aoi=aoi,
                                               **extra_query_kwargs)
 
-            # activate and download the tiles
-            scence_ids = download_tiles_from_aoi(planet_query,
-                                                 asset_dir,
-                                                 asset_type=asset_type,
-                                                 search_type='PSOrthoTile')
 
-            output_path = merge_scenes(scence_ids,
+            # activate and download the tiles
+            scene_ids = download_tiles_from_aoi(planet_query,
+                                                asset_dir,
+                                                asset_type=asset_type,
+                                                search_type='PSOrthoTile')
+
+            print(scene_ids)
+
+            output_path = merge_scenes(scene_ids,
                                        asset_dir,
                                        county_pixel_dir,
-                                       asset_type)
+                                       asset_type,
+                                       crop_name,
+                                       search_type='PSOrthoTile',
+                                       match_histograms=match_hist,
+                                       adjust_reflectance=reflectance)
 
             # These are the most common sizes for many pre-trained CNNs
             resize_for_inceptionv3(output_path)
