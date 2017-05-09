@@ -39,7 +39,7 @@ activate_planet_kenya:
 
 ## Activate the planet images for Kenya (but don't download yet)
 download_planet_wards:
-	python src/data/download_planet.py wards 'maiz_p--ssa' maize --wards --asset_type analytic --cloud_cover 0.05 --season fall --reflectance --resize
+	python src/data/download_planet.py wards 'maiz_p--ssa' maize --wards --asset_type analytic --cloud_cover 0.20 --season fall --reflectance
 
 ## Download visual plan data for Maize + full country of kenya and resize for InceptionV3
 download_planet_maize_kenya:
