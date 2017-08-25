@@ -72,34 +72,38 @@ def resize_all_in_dir(dir_path,
 
 
 def adjust_image_by_reflectance(p, coeffs, bands, keep_raw=False):
-    """ Overwrites a raw image with values multiplied be the
+    """ Overwrites a raw image with values multiplied by the
         provided reflectance coefficient for each band.
     """
-    with rasterio.open(p) as src:
-        updated_bands = []
-        for i in bands:
-            band = src.read(i)
-            print(band.dtype)
-            print(type(coeffs[i]))
-            new_band = (i, band.astype(np.float32) * coeffs[i])
-            updated_bands.append(new_band)
+    try:
+        with rasterio.open(p) as src:
+            updated_bands = []
+            for i in bands:
+                band = src.read(i)
+                new_band = (i, band.astype(np.float32) * coeffs[i])
+                updated_bands.append(new_band)
 
-        kwargs = src.meta
+            kwargs = src.meta
+    except rasterio.errors.RasterioIOError:
+        print("Bad data, rasterio could not process {}".format(p))
+        return False, ''
 
     kwargs.update(
         dtype=np.float32,
-        count=len(updated_bands))
-
-    # store the original raw version
-    shutil.move(p, p + "_raw")
+        count=len(bands))
 
     if not keep_raw:
-        os.remove(p + "_raw")
+        os.remove(p)
+    else:
+        # store the original raw version
+        shutil.move(p, p + "_raw")
 
     # rewrite in same location
     with rasterio.open(p, 'w', **kwargs) as dst:
         for i, band_data in updated_bands:
             dst.write_band(i, band_data)
+
+    return True, p
 
 
 def batch_hist_match_worker(ref_paths, match_proportion,
@@ -120,9 +124,11 @@ def batch_hist_match_worker(ref_paths, match_proportion,
     src_path = ref_paths[0]
 
     with rasterio.open(src_path) as src:
-        print("THE SHAPE", src.read().shape)
         profile = src.profile.copy()
         src_arr = src.read(masked=masked)
+
+        if src_arr.dtype != np.float32:
+            raise("Currently, this only supports float32")
 
         if masked:
             src_mask, src_fill = calculate_mask(src, src_arr)
@@ -138,28 +144,30 @@ def batch_hist_match_worker(ref_paths, match_proportion,
     n_bands = src_arr.shape[0]
 
     for i, ref_path in enumerate(ref_paths):
-        with rasterio.open(ref_path) as ref:
-            ref_arr = ref.read(masked=masked)
+        # import pdb;pdb.set_trace();
+        try:
+            with rasterio.open(ref_path, 'r') as ref:
+                ref_arr = ref.read(masked=masked)
 
-            if masked:
-                ref_mask, ref_fill = calculate_mask(ref, ref_arr)
-                ref_arr = ref_arr.filled()
-            else:
-                ref_mask, ref_fill = None, None
+                if masked:
+                    ref_mask, ref_fill = calculate_mask(ref, ref_arr)
+                    ref_arr = ref_arr.filled()
+                else:
+                    ref_mask, ref_fill = None, None
 
-            ref_out[i, :, :, :] = ref_arr
+                ref_out[i, :, :, :] = ref_arr
 
-            if ref_mask is None:
-                ref_mask_out = None
-            else:
-                ref_mask_out[i, :, :] = ref_mask
+                if ref_mask is None:
+                    ref_mask_out = None
+                else:
+                    ref_mask_out[i, :, :] = ref_mask
+        except:
+            import pdb;pdb.set_trace()
 
     bixs = tuple([int(x) - 1 for x in bands.split(',')])
-    # band_names = [color_space[x] for x in bixs]  # assume 1 letter per band
 
-    # we only support rgb for now
-    arrnorm_raw = ref_out.astype(np.float64) / np.iinfo(ref_out.dtype).max
-    ref = arrnorm_raw[:, bixs, :, :]
+    # arrnorm_raw = ref_out / np.iinfo(ref_out.dtype).max
+    ref = ref_out #[:, bixs, :, :]
 
     output_paths = []
 
@@ -175,7 +183,8 @@ def batch_hist_match_worker(ref_paths, match_proportion,
             else:
                 src_mask, src_fill = None, None
 
-        src = cs_forward(src_arr, color_space, band_range=range(n_bands))
+        # src = cs_forward(src_arr, color_space, band_range=range(n_bands))
+        src = src_arr
 
         target = src.copy()
         for i, b in enumerate(bixs):
@@ -198,7 +207,7 @@ def batch_hist_match_worker(ref_paths, match_proportion,
 
             target[b] = histogram_match(src_band, ref_band, match_proportion)
 
-        target_rgb = cs_backward(target, color_space)
+        target_rgb = target # cs_backward(target, color_space)
 
         # re-apply src_mask to target_rgb and write ndv
         if src_mask is not None:
@@ -210,7 +219,7 @@ def batch_hist_match_worker(ref_paths, match_proportion,
 
         profile['count'] = n_bands
 
-        profile['dtype'] = 'uint8'
+        # profile['dtype'] = 'uint8'
         profile['nodata'] = None
         profile['transform'] = guard_transform(profile['transform'])
         profile.update(creation_options)
@@ -237,10 +246,12 @@ def batch_hist_match_worker(ref_paths, match_proportion,
 def cs_forward(arr, cs='rgb', band_range=range(3)):
     """ RGB (any dtype) to whatevs
     """
-    arrnorm_raw = arr.astype('float64') / np.iinfo(arr.dtype).max
+    arrnorm_raw = arr / np.iinfo(arr.dtype).max
     arrnorm = arrnorm_raw[band_range]
     cs = cs.lower()
     if cs == 'rgb':
+        return arrnorm
+    elif cs == 'bgren':
         return arrnorm
     elif cs == 'lch':
         return convert_arr(arrnorm,

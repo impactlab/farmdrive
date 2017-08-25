@@ -14,7 +14,6 @@ from joblib import Parallel, delayed
 import sqlalchemy
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from tqdm import tqdm
 import shapefile
 
 import download_planet_lib as planet_lib
@@ -97,11 +96,7 @@ def get_ward_aois(wards_path=os.path.join(RAW_DATA_ROOT,'Ward Shapefiles', 'ward
         aoi_name = aoi_name.replace("\\", "-")
         aoi_name = aoi_name.replace("'", '')
         aoi_name = aoi_name.replace(" ", "-")
-
-
-
         aoi['id'] = aoi_name
-        print("------  AOI ID: ", aoi['id'])
         return aoi
 
     aois = list(map(_set_id_as_name, aois))
@@ -225,7 +220,7 @@ def wait_for_scene_activation(scene_ids, search_type, asset_type, asset_dir):
 
     # wait for assets to activate; can take 8-10 mins, we'll wait up to 30 min
     SLEEP_PERIODS = 120
-    for i in tqdm(range(SLEEP_PERIODS)):
+    for i in range(SLEEP_PERIODS):
         activated = planet_lib.process_activation(planet_lib.check_activation,
                                                   not_local_scenes,
                                                   search_type,
@@ -237,7 +232,6 @@ def wait_for_scene_activation(scene_ids, search_type, asset_type, asset_dir):
         not_local_scenes = list(compress(not_local_scenes, not_activated))
 
         if all(activated) or len(not_local_scenes) == 0:
-            print('All scenes activated!')
             break
         else:
             time.sleep(15)
@@ -266,8 +260,8 @@ def activate_all_of_kenya(search_type, asset_type, asset_dir, query_kwargs={}):
 
 def download_tiles_from_aoi(planet_query,
                             asset_dir,
-                            asset_type='analytic',
-                            search_type='PSOrthoTile'):
+                            asset_type,
+                            search_type):
     """ Activates the scenes in the planet query and downloads
         them to the asset_dir if they are not there already.
     """
@@ -288,7 +282,7 @@ def download_tiles_from_aoi(planet_query,
                                              not_local_scene_ids,
                                              search_type,
                                              asset_type,
-                                             False)
+                                             False) # overwrite
 
     if not all(downloaded):
         fail_path = os.path.join(asset_dir, 'failed_downloads.log')
@@ -322,43 +316,57 @@ def merge_scenes(scene_ids, asset_dir, county_pixel_dir, asset_type, crop, searc
         scene_file.write("\n".join(resized_paths))
 
     # resize all of the images
-    for to_resize_in, to_resize_out in zip(paths, resized_paths):
-        if not os.path.exists(to_resize_out):
-            try:
-                check_output(['gdalwarp',
-                      '-ts',
-                      str(resize_pxs),
-                      str(0),  # height is calculated
-                      to_resize_in,
-                      to_resize_out],
-                     stderr=STDOUT)
-            except CalledProcessError as e:
-                print(e.output)
-                raise
+    if resize_pxs is not None:
+        for to_resize_in, to_resize_out in zip(paths, resized_paths):
+            if not os.path.exists(to_resize_out):
+                try:
+                    check_output(['gdalwarp',
+                          '-ts',
+                          str(resize_pxs),
+                          str(0),  # height is calculated
+                          to_resize_in,
+                          to_resize_out],
+                         stderr=STDOUT)
+                except CalledProcessError as e:
+                    print(e.output)
+                    raise
+    else:
+        # just use the normal paths in the future, since we don't resize
+        resized_paths = paths
 
     if asset_type == 'visual':
         bands = "1,2,3"
     elif asset_type == 'analytic':
         # analytic includes NIR in band 4
         bands = "1,2,3,4"
+
+        # 5th band for RE analytic
+        if search_type.startswith('RE'):
+            bands += ',5'
+
     else:
         raise ValueError("Unsupported asset type {}. Try 'visual' or 'analytic'.".format(asset_type))
 
+    if adjust_reflectance:
+        refl_paths = []
+        for sid, image_path, xml_path in zip(scene_ids, resized_paths, paths):
+            reflectance_coeffs = get_reflectance_info(sid, xml_path, search_type)
+            res, res_path = adjust_image_by_reflectance(image_path, reflectance_coeffs, list(reflectance_coeffs.keys()))
+            if res:
+                refl_paths.append(res_path)
+    else:
+        refl_paths = resized_paths
+
     if match_histograms:
-        matched_paths = batch_hist_match_worker(resized_paths,
+        matched_paths = batch_hist_match_worker(refl_paths,
                                                 1.0,
                                                 {},
                                                 bands,
-                                                'rgb',
+                                                'rgb' if asset_type == 'visual' else 'bgren',
                                                 False,
                                                 masked=asset_type == 'visual')  # analytic tiffs have no mask
     else:
-        matched_paths = resized_paths
-
-    if adjust_reflectance:
-        for sid, image_path, xml_path in zip(scene_ids, matched_paths, paths):
-            reflectance_coeffs = get_reflectance_info(sid, xml_path, search_type)
-            adjust_image_by_reflectance(image_path, reflectance_coeffs, list(reflectance_coeffs.keys()))
+        matched_paths = refl_paths
 
     try:
         check_output(['gdalwarp',
@@ -394,15 +402,24 @@ def get_reflectance_info(sid, path, search_type):
 
     xml_path = os.path.join(directory, fname)
     xmldoc = minidom.parse(xml_path)
-    nodes = xmldoc.getElementsByTagName("ps:bandSpecificMetadata")
 
-    # XML parser refers to bands by numbers 1-4
+    if search_type.lower().startswith('ps'):
+        prefix = 'ps'
+    elif search_type.lower().startswith('re'):
+        prefix = 're'
+    else:
+        raise Exception('Search Type {} not supported for reflectance coefficients'.format(search_type))
+
+    nodes = xmldoc.getElementsByTagName(prefix + ":bandSpecificMetadata")
+
+    # XML parser refers to bands by numbers 1-5
     coeffs = {}
     for node in nodes:
-        bn = node.getElementsByTagName("ps:bandNumber")[0].firstChild.data
-        if bn in ['1', '2', '3', '4']:
+        bn = node.getElementsByTagName(prefix + ":bandNumber")[0].firstChild.data
+        if bn in ['0', '1', '2', '3', '4', '5']:
             i = int(bn)
-            value = node.getElementsByTagName("ps:reflectanceCoefficient")[0].firstChild.data
+            coeff_var = ':radiometricScaleFactor' if prefix == 're' else ':reflectanceCoefficient'
+            value = node.getElementsByTagName(prefix + coeff_var)[0].firstChild.data
             coeffs[i] = float(value)
 
     return coeffs
@@ -416,44 +433,63 @@ def create_dirs_query_and_download(county_data,
                                    extra_query_kwargs,
                                    asset_dir,
                                    asset_type,
+                                   search_type,
                                    match_hist,
                                    reflectance,
-                                   resize):
-    county_pixel_dir = os.path.join(county_data,
-                                    aoi['id'] + '_' + season)
+                                   resize,
+                                   model_resize,
+                                   aoi_index,
+                                   total_aois):
+    print("Starting aoi creation for aoi '{}' ({}/{})  <=====".format(os.path.basename(county_data),
+                                                                      aoi_index+1,
+                                                                      total_aois))
+    try:
+        county_pixel_dir = os.path.join(county_data,
+                                        aoi['id'] + '_' + season)
 
-    os.makedirs(county_pixel_dir, exist_ok=True)
+        os.makedirs(county_pixel_dir, exist_ok=True)
 
-    # get the geojson and write in both projections
-    write_and_reproject_per_pixel_geojson(aoi, county_pixel_dir, crop_name)
+        # get the geojson and write in both projections
+        write_and_reproject_per_pixel_geojson(aoi, county_pixel_dir, crop_name)
 
-    if collect_crop_yield_only:
-        return
+        if collect_crop_yield_only:
+            return
 
-    # get the representation of the query
-    planet_query = build_planet_query(geojson_aoi=aoi,
-                                      **extra_query_kwargs)
+        # get the representation of the query
+        planet_query = build_planet_query(geojson_aoi=aoi,
+                                          **extra_query_kwargs)
 
 
-    # activate and download the tiles
-    scene_ids = download_tiles_from_aoi(planet_query,
-                                        asset_dir,
-                                        asset_type=asset_type,
-                                        search_type='PSOrthoTile')
+        # activate and download the tiles
+        scene_ids = download_tiles_from_aoi(planet_query,
+                                            asset_dir,
+                                            asset_type=asset_type,
+                                            search_type=search_type)
 
-    output_path = merge_scenes(scene_ids,
-                               asset_dir,
-                               county_pixel_dir,
-                               asset_type,
-                               crop_name,
-                               search_type='PSOrthoTile',
-                               match_histograms=match_hist,
-                               adjust_reflectance=reflectance)
+        output_path = merge_scenes(scene_ids,
+                                   asset_dir,
+                                   county_pixel_dir,
+                                   asset_type,
+                                   crop_name,
+                                   search_type=search_type,
+                                   match_histograms=match_hist,
+                                   adjust_reflectance=reflectance,
+                                   resize_pxs=resize)
 
-    # These are the most common sizes for many pre-trained CNNs
-    if resize:
-        resize_for_inceptionv3(output_path)
-        resize_for_vgg(output_path)
+        # These are the most common sizes for many pre-trained CNNs
+        if model_resize:
+            resize_for_inceptionv3(output_path)
+            resize_for_vgg(output_path)
+
+        print("Merged scenes into ====> {}".format(output_path))
+
+    except Exception as e:
+        print('>>>>>>>>>>>>>> FAILURE TO DOWNLOAD AOI >>>>>>>>>>>>>')
+        print(e)
+        print(traceback.print_exc())
+        with open(os.path.join(county_pixel_dir, "FAILURE.txt"), 'w') as f:
+            f.write(traceback.format_exc())
+
 
 def joblib_wrapper(county_data,
                    aoi,
@@ -463,9 +499,13 @@ def joblib_wrapper(county_data,
                    extra_query_kwargs,
                    asset_dir,
                    asset_type,
+                   search_type,
                    match_hist,
                    reflectance,
-                   resize):
+                   resize,
+                   model_resize,
+                   aoi_index,
+                   total_aois):
 
     if isinstance(aoi, sqlalchemy.engine.result.RowProxy):
         aoi = aoi[0]
@@ -478,9 +518,13 @@ def joblib_wrapper(county_data,
                                                    extra_query_kwargs,
                                                    asset_dir,
                                                    asset_type,
+                                                   search_type,
                                                    match_hist,
                                                    reflectance,
-                                                   resize)
+                                                   resize,
+                                                   model_resize,
+                                                   aoi_index,
+                                                   total_aois)
 
 
 def run_queries_for_each_aoi(geojson_aois,
@@ -491,42 +535,29 @@ def run_queries_for_each_aoi(geojson_aois,
                              extra_query_kwargs,
                              asset_dir,
                              asset_type,
+                             search_type,
                              match_hist,
                              reflectance,
-                             resize):
-    # download images for every area of interest
-    failed_aois = []
-
-    with Parallel(n_jobs=-1) as parallel:
-        try:
-            parallel([joblib_wrapper(county_data,
-                                     aoi,
-                                     season,
-                                     crop_name,
-                                     collect_crop_yield_only,
-                                     extra_query_kwargs,
-                                     asset_dir,
-                                     asset_type,
-                                     match_hist,
-                                     reflectance,
-                                     resize) \
-                      for aoi in geojson_aois])
-
-        except Exception as e:
-            print('>>>>>>>>>>>>>> FAILURE TO DOWNLOAD AOI >>>>>>>>>>>>>')
-            print(e)
-            print(traceback.print_exc())
-            failed_aois.append(aoi)
-
-        print('{} of {} aois did not download correctly.'.format(len(failed_aois),
-                                                                 len(geojson_aois)))
-
-        if failed_aois:
-            fail_path = os.path.join(county_data, 'failed_aois.json')
-            with open(fail_path, 'w') as fail_log:
-                json.dump(failed_aois, fail_log)
-            print("Wrote scenes that failed to activate to {}".format(fail_path))
-
+                             resize,
+                             model_resize,
+                             n_jobs):
+    with Parallel(n_jobs=n_jobs) as parallel:
+        parallel([joblib_wrapper(county_data,
+                                 aoi,
+                                 season,
+                                 crop_name,
+                                 collect_crop_yield_only,
+                                 extra_query_kwargs,
+                                 asset_dir,
+                                 asset_type,
+                                 search_type,
+                                 match_hist,
+                                 reflectance,
+                                 resize,
+                                 model_resize,
+                                 ix,
+                                 len(geojson_aois)) \
+                  for ix, aoi in enumerate(geojson_aois)])
 
 
 @click.command()
@@ -539,12 +570,15 @@ def run_queries_for_each_aoi(geojson_aois,
 @click.option('--max_date', default='', help='End date in ISO8601')
 @click.option('--cloud_cover', default='', help='Percent cloud cover allowed 0-1.')
 @click.option('--asset_type', default='analytic', help="'analytic' or 'visual' assets from the Planet API")
-@click.option('--resize', is_flag=True, help="Create a resized image after it is downloaded.")
+@click.option('--search_type', default='REOrthoTile', help="'REOrthoTile' or 'PSOrthoTile', assets from the Planet API")
+@click.option('--resize', default=None, type=int, help="Create a resized image after it is downloaded. Enter the integer number of pixels.")
+@click.option('--model_resize', is_flag=True, help="Automatically create resized images that are ready for Inception and VGG")
 @click.option('--season', default=None, help="Winter, spring, summer or fall (defined as q1, q2, q3, q4)")
 @click.option('--activate_only', is_flag=True, help="Only run activation; currently only compatible with county_name=Kenya")
 @click.option('--collect_crop_yield_only', is_flag=True, help="Only collect crop yield information for the given crop and save with aois.")
-@click.option('--match_hist', is_flag=False, help="Normalize histograms for scenes that will be joined. Not recommended with reflectance.")
+@click.option('--match_hist', is_flag=True, help="Normalize histograms for scenes that will be joined.")
 @click.option('--reflectance', is_flag=True, help="Multiply pixel values by TOA reflectance coefficients.")
+@click.option('--n_jobs', default=1, type=int, help="Number of jobs. default=1, use -1 for all cores.")
 def download_county_crop_tiles(county_name,
                                crop_table,
                                crop_name,
@@ -554,12 +588,15 @@ def download_county_crop_tiles(county_name,
                                max_date,
                                cloud_cover,
                                asset_type,
+                               search_type,
                                resize,
+                               model_resize,
                                season,
                                activate_only,
                                collect_crop_yield_only,
                                match_hist,
-                               reflectance):
+                               reflectance,
+                               n_jobs):
     """ This script downloads planet labs data for the crop_table in county_name
         and saves it as the crop_name.
 
@@ -571,9 +608,6 @@ def download_county_crop_tiles(county_name,
     else:
         # get the areas of interest from the postgres database
         geojson_aois = query_for_aois(county_name, crop_table, crop_name)
-
-    if reflectance and match_hist:
-        raise Exception("It is not recommended to use histogram matching and the reflectance values.")
 
     # if we want to limit the number of aois we work on, we can use
     # the aoi_selector flag; this is useful for debugging
@@ -619,7 +653,7 @@ def download_county_crop_tiles(county_name,
     # if we're working on all of Kenya, scene activation can take a very long
     # time we'll frontload activating off of the scenes in the country
     if county_name == 'Kenya' and not collect_crop_yield_only:
-        activate_all_of_kenya('PSOrthoTile',
+        activate_all_of_kenya(search_type,
                               asset_type,
                               asset_dir,
                               query_kwargs=extra_query_kwargs)
@@ -635,9 +669,12 @@ def download_county_crop_tiles(county_name,
                              extra_query_kwargs,
                              asset_dir,
                              asset_type,
+                             search_type,
                              match_hist,
                              reflectance,
-                             resize)
+                             resize,
+                             model_resize,
+                             n_jobs)
 
 
 def bbox_to_coords(bbox):
