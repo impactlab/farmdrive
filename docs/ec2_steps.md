@@ -13,6 +13,14 @@ sudo apt-get update
 sudo apt-get -y dist-upgrade
 ```
 
+## Install OSSIM
+
+```
+sudo add-apt-repository ppa:ubuntugis/ubuntugis-unstable
+sudo apt-get update
+sudo apt-get install ossim-core
+```
+
 ## Make sure EBS is mounted
 http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-using-volumes.html
 ```
