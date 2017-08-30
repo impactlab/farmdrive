@@ -6,12 +6,12 @@ from __future__ import print_function
 import argparse
 import os
 import requests
+import shutil
 import json
 
 from retrying import retry
 
 import dotenv
-from tqdm import tqdm
 
 ASSET_URL = 'https://api.planet.com/data/v1/item-types/{}/items/{}/assets/'
 SEARCH_URL = 'https://api.planet.com/data/v1/quick-search'
@@ -148,7 +148,10 @@ def check_activation(item_id, item_type, asset_type):
     retry_on_exception=retry_if_rate_limit_error,
     stop_max_attempt_number=5)
 def download(url, path, item_id, asset_type, overwrite):
-    fname = '{}_{}.tif'.format(item_id, asset_type)
+    if 'xml' in asset_type:
+        fname = '{}.xml'.format(item_id)
+    else:
+        fname = '{}_{}.tif'.format(item_id, asset_type)
     local_path = os.path.join(path, fname)
 
     if not overwrite and os.path.exists(local_path):
@@ -157,23 +160,27 @@ def download(url, path, item_id, asset_type, overwrite):
         print('Downloading file to {}'.format(local_path))
         # memory-efficient download, per
         # stackoverflow.com/questions/16694907/how-to-download-large-file-in-python-with-requests-py
-        result = requests.get(url)
+        r = requests.get(url, stream=True)
+        with open(local_path, 'wb') as f:
+            shutil.copyfileobj(r.raw, f)
 
-        if check_status(result):
-            f = open(local_path, 'wb')
-            for chunk in result.iter_content(chunk_size=512 * 1024):
-                # filter out keep-alive new chunks
-                if chunk:
-                    f.write(chunk)
-            f.close()
+        return True
 
-    return True
+    #     if check_status(result):
+    #         f = open(local_path, 'wb')
+    #         for chunk in result.iter_content(chunk_size=512 * 1024):
+    #             # filter out keep-alive new chunks
+    #             if chunk:
+    #                 f.write(chunk)
+    #         f.close()
+
+    # return True
 
 
 def process_activation(func, id_list, item_type, asset_type):
     results = []
 
-    for item_id in tqdm(id_list):
+    for item_id in id_list:
         result = func(item_id, item_type, asset_type)
         results.append(result)
 
